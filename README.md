@@ -1,6 +1,6 @@
 # TypingMind Privacy Checker
 
-<div align="center">💗 <a href="https://buymeacoffee.com/itcon">If you found this useful, please consider buying me a coffee</a> 💗<br/><br/></div>
+<br/><div align="center">💗 <a href="https://buymeacoffee.com/itcon">If you found this useful, please consider buying me a coffee</a> 💗</div>
 
 ## Features
 
