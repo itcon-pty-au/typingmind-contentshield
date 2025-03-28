@@ -579,22 +579,26 @@
           
           <div class="form-group">
             <label>Menu & Keyboard Controls</label>
-            <div class="space-y-3">
+            <div class="space-y-2">
               <div class="flex items-center">
-                <input type="checkbox" id="hide-menu-btn" class="mr-2" ${
-                  !config.menuButton.show ? "checked" : ""
-                }>
-                <label for="hide-menu-btn" class="text-sm">Hide extension from menu</label>
+                <label for="menu-visibility" class="text-sm mr-2 w-32">Menu Visibility:</label>
+                <select id="menu-visibility" class="flex-grow">
+                  <option value="show" ${
+                    config.menuButton.show ? "selected" : ""
+                  }>Show Privacy menu</option>
+                  <option value="hide" ${
+                    !config.menuButton.show ? "selected" : ""
+                  }>Hide Privacy menu</option>
+                </select>
               </div>
               
-              <div class="flex items-center space-x-2">
+              <div class="flex items-center">
+                <label for="keyboard-shortcut" class="text-sm mr-2 w-32">Keyboard Shortcut:</label>
                 <div class="relative flex-grow">
                   <input type="text" id="keyboard-shortcut" value="${
                     config.menuButton.shortcut
                   }" 
-                    class="w-full pr-16" ${
-                      !config.menuButton.show ? "required" : ""
-                    } placeholder="Keyboard shortcut">
+                    class="w-full" ${!config.menuButton.show ? "required" : ""}>
                   <button id="record-shortcut" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-400 hover:text-blue-500">
                     Record
                   </button>
@@ -708,9 +712,9 @@
         applyStyleChanges();
       } else if (e.target.id === "border-width-input") {
         applyStyleChanges();
-      } else if (e.target.id === "hide-menu-btn") {
+      } else if (e.target.id === "menu-visibility") {
         // Toggle menu placement section opacity and disabled state
-        const hideMenu = e.target.checked;
+        const isHidden = e.target.value === "hide";
         const placementSection = document.querySelector(
           ".menu-placement-section"
         );
@@ -722,21 +726,21 @@
         const shortcutError = document.getElementById("shortcut-error");
 
         if (placementSection) {
-          placementSection.style.opacity = !hideMenu ? "1" : "0.5";
-          placementPosition.disabled = hideMenu;
-          placementReference.disabled = hideMenu;
+          placementSection.style.opacity = !isHidden ? "1" : "0.5";
+          placementPosition.disabled = isHidden;
+          placementReference.disabled = isHidden;
         }
 
-        // Show error if menu button is hidden and no shortcut is provided
+        // Show error if menu is hidden and no shortcut is provided
         if (
-          hideMenu &&
+          isHidden &&
           (!shortcutInput.value || shortcutInput.value.trim() === "")
         ) {
           shortcutError.classList.remove("hidden");
           shortcutInput.setAttribute("required", "required");
         } else {
           shortcutError.classList.add("hidden");
-          if (!hideMenu) shortcutInput.removeAttribute("required");
+          if (!isHidden) shortcutInput.removeAttribute("required");
         }
       }
     });
@@ -1203,12 +1207,12 @@
     const placementReference = document.getElementById(
       "placement-reference"
     ).value;
-    const hideMenuButton = document.getElementById("hide-menu-btn").checked;
+    const menuVisibility = document.getElementById("menu-visibility").value;
     const keyboardShortcut = document.getElementById("keyboard-shortcut").value;
 
-    // Validate: if menu button is hidden, shortcut is required
+    // Validate: if menu is hidden, shortcut is required
     if (
-      hideMenuButton &&
+      menuVisibility === "hide" &&
       (!keyboardShortcut || keyboardShortcut.trim() === "")
     ) {
       document.getElementById("shortcut-error").classList.remove("hidden");
@@ -1230,10 +1234,10 @@
 
     // Save menu button settings
     const menuButtonChanged =
-      config.menuButton.show !== !hideMenuButton ||
+      config.menuButton.show !== (menuVisibility === "show") ||
       config.menuButton.shortcut !== keyboardShortcut;
 
-    config.menuButton.show = !hideMenuButton;
+    config.menuButton.show = menuVisibility === "show";
     config.menuButton.shortcut = keyboardShortcut;
 
     saveConfig();
@@ -1249,7 +1253,7 @@
       setupKeyboardShortcut();
 
       // Add or remove menu button
-      if (!hideMenuButton) {
+      if (menuVisibility === "show") {
         if (!privacyButton || !privacyButton.parentNode) {
           setupPrivacyButton();
         } else if (placementChanged) {
@@ -1261,7 +1265,7 @@
         privacyButton.parentNode.removeChild(privacyButton);
         privacyButton = null;
       }
-    } else if (placementChanged && !hideMenuButton) {
+    } else if (placementChanged && menuVisibility === "show") {
       // Reposition button if placement changed and button is visible
       setupPrivacyButton();
     }
@@ -1451,7 +1455,8 @@
       shortcutInput.value = parts.join("+");
 
       // Hide error if value is provided and menu button is hidden
-      const hideMenu = document.getElementById("hide-menu-btn").checked;
+      const hideMenu =
+        document.getElementById("menu-visibility").value === "hide";
       const shortcutError = document.getElementById("shortcut-error");
 
       if (hideMenu && shortcutInput.value.trim() !== "") {
