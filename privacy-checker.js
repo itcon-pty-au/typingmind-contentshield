@@ -581,7 +581,7 @@
             <label>Menu & Keyboard Controls</label>
             <div class="space-y-2">
               <div class="flex items-center">
-                <input type="checkbox" id="hide-menu-btn" class="mr-2" ${
+                <input type="checkbox" id="hide-menu-btn" class="rule-toggle mr-2" ${
                   !config.menuButton.show ? "checked" : ""
                 }>
                 <label for="hide-menu-btn" class="text-sm">Hide extension from menu</label>
