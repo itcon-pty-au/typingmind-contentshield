@@ -579,7 +579,7 @@
           
           <div class="form-group">
             <label>Menu & Keyboard Controls</label>
-            <div class="space-y-2">
+            <div class="space-y-3">
               <div class="flex items-center">
                 <input type="checkbox" id="hide-menu-btn" class="mr-2" ${
                   !config.menuButton.show ? "checked" : ""
@@ -587,13 +587,14 @@
                 <label for="hide-menu-btn" class="text-sm">Hide extension from menu</label>
               </div>
               
-              <div class="flex items-center">
-                <label for="keyboard-shortcut" class="text-sm mr-2 w-32">Keyboard Shortcut:</label>
+              <div class="flex items-center space-x-2">
                 <div class="relative flex-grow">
                   <input type="text" id="keyboard-shortcut" value="${
                     config.menuButton.shortcut
                   }" 
-                    class="w-full" ${!config.menuButton.show ? "required" : ""}>
+                    class="w-full pr-16" ${
+                      !config.menuButton.show ? "required" : ""
+                    } placeholder="Keyboard shortcut">
                   <button id="record-shortcut" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-400 hover:text-blue-500">
                     Record
                   </button>
