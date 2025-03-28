@@ -419,7 +419,7 @@
     // Add content to the modal
     modalContent.innerHTML = `
       <div class="modal-header">
-        <h3 class="modal-title">Privacy Checker</h3>
+        <h3 class="modal-title">Privacy Checker Settings</h3>
         <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
       </div>
 
@@ -967,10 +967,12 @@
     const toggleIcon = document.getElementById("toggle-style-icon");
 
     if (styleContent.style.display === "none") {
+      // Show content with fade-in effect
       styleContent.style.display = "block";
       toggleText.textContent = "Hide";
       toggleIcon.innerHTML = '<polyline points="18 15 12 9 6 15"></polyline>';
     } else {
+      // Hide content
       styleContent.style.display = "none";
       toggleText.textContent = "Show";
       toggleIcon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
@@ -1538,18 +1540,17 @@
         border-radius: 0.25rem;
       }
 
-      /* Add animation for collapsible content */
+      /* Style content transitions */
       #style-settings-content {
-        max-height: 0;
-        transition: max-height 0.3s ease-out;
         overflow: hidden;
+        transition: all 0.3s ease;
       }
       
       #style-settings-content.expanded {
-        max-height: 500px;
+        display: block;
       }
       
-      /* Add icon animation */
+      /* Icon animation */
       #toggle-style-icon {
         transition: transform 0.3s ease;
       }
