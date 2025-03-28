@@ -581,7 +581,6 @@
             <label>Menu & Keyboard Controls</label>
             <div class="space-y-2">
               <div class="flex items-center">
-                <label for="menu-visibility" class="text-sm mr-2 w-32">Menu Visibility:</label>
                 <select id="menu-visibility" class="flex-grow">
                   <option value="show" ${
                     config.menuButton.show ? "selected" : ""
