@@ -991,7 +991,7 @@
             : ""
         }>
           <label class="flex items-center">
-            <input type="checkbox" id="case-sensitive-input" class="mr-2" ${
+            <input type="checkbox" id="case-sensitive-input" class="rule-toggle mr-2" ${
               existingRule &&
               existingRule.type === "string" &&
               existingRule.caseSensitive
@@ -1541,6 +1541,42 @@
         transition: background-color 0.2s ease;
       }
       .toggle-checkbox:focus {
+        outline: none;
+        box-shadow: none;
+      }
+
+      /* Rule toggle styling */
+      .rule-toggle {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background-color: transparent;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .rule-toggle:checked {
+        background-color: #68D391;
+        border-color: #68D391;
+      }
+      
+      .rule-toggle:checked::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 5px;
+        height: 9px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+      
+      .rule-toggle:focus {
         outline: none;
         box-shadow: none;
       }
