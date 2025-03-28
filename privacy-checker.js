@@ -58,6 +58,10 @@
       borderWidth: "2px",
       warningHeaderBg: "#1e50c1",
     },
+    placement: {
+      position: "before",
+      referenceElement: "workspace-tab-settings",
+    },
   };
 
   // DOM Elements
@@ -66,10 +70,12 @@
   let modalContainer = null;
   let rulesList = null;
   let lastActiveMatches = [];
+  let menuItems = {};
 
   // Initialize the extension
   function init() {
     loadConfig();
+    scanMenuItems();
     setupPrivacyButton();
     setupChatMonitoring();
     setupModalContainer();
@@ -94,10 +100,52 @@
             warningHeaderBg: parsedConfig.styles.warningHeaderBg ?? "#1e50c1",
           };
         }
+
+        // Load placement settings
+        if (parsedConfig.placement) {
+          config.placement = {
+            position: parsedConfig.placement.position ?? "before",
+            referenceElement:
+              parsedConfig.placement.referenceElement ??
+              "workspace-tab-settings",
+          };
+        }
       } catch (e) {
         console.error("Failed to parse saved privacy checker config", e);
       }
     }
+  }
+
+  // Scan menu items to populate dropdown options
+  function scanMenuItems() {
+    const menuBar = document.querySelector('[data-element-id="workspace-bar"]');
+    if (!menuBar) {
+      // Try again in a second if menu bar isn't loaded yet
+      setTimeout(scanMenuItems, 1000);
+      return;
+    }
+
+    // Get all menu buttons
+    const buttons = menuBar.querySelectorAll(
+      'button[data-element-id^="workspace-tab-"]'
+    );
+
+    // Store each button's id and label text
+    buttons.forEach((button) => {
+      const id = button.getAttribute("data-element-id");
+      // Get text label (typically in a span inside the button)
+      const labelSpan = button.querySelector("span span");
+      const label = labelSpan
+        ? labelSpan.textContent.trim()
+        : id.replace("workspace-tab-", "");
+
+      menuItems[id] = {
+        id,
+        label,
+      };
+    });
+
+    console.log("Menu items found:", Object.keys(menuItems).length);
   }
 
   // Save configuration to localStorage
@@ -110,13 +158,9 @@
 
   // Setup the privacy button in the UI
   function setupPrivacyButton() {
-    // Look for the agents button to insert our button before it
-    const agentsButton = document.querySelector(
-      '[data-element-id="workspace-tab-agents"]'
-    );
-    if (!agentsButton) {
-      console.error("Could not find agents button to position privacy button");
-      return;
+    // Remove existing button if present
+    if (privacyButton && privacyButton.parentNode) {
+      privacyButton.parentNode.removeChild(privacyButton);
     }
 
     // Create the privacy button
@@ -136,8 +180,34 @@
       </span>
     `;
 
-    // Insert the button before the agents button
-    agentsButton.parentNode.insertBefore(privacyButton, agentsButton);
+    // Get reference element
+    const position = config.placement.position;
+    const refElementId = config.placement.referenceElement;
+    const referenceElement = document.querySelector(
+      `[data-element-id="${refElementId}"]`
+    );
+
+    if (!referenceElement) {
+      console.error(`Reference element with ID ${refElementId} not found`);
+      // Fallback to appending to the workspace bar
+      const workspaceBar = document.querySelector(
+        '[data-element-id="workspace-bar"]'
+      );
+      if (workspaceBar) {
+        workspaceBar.appendChild(privacyButton);
+      }
+      return;
+    }
+
+    // Insert before or after the reference element
+    if (position === "before") {
+      referenceElement.parentNode.insertBefore(privacyButton, referenceElement);
+    } else {
+      referenceElement.parentNode.insertBefore(
+        privacyButton,
+        referenceElement.nextSibling
+      );
+    }
 
     // Add click event listener
     privacyButton.addEventListener("click", (e) => {
@@ -487,6 +557,24 @@
             </div>
           </div>
           
+          <div class="form-group">
+            <label for="menu-placement">Menu Icon Placement</label>
+            <div class="flex items-center space-x-2">
+              <select id="placement-position" class="flex-1">
+                <option value="before" ${
+                  config.placement.position === "before" ? "selected" : ""
+                }>Before</option>
+                <option value="after" ${
+                  config.placement.position === "after" ? "selected" : ""
+                }>After</option>
+              </select>
+              <select id="placement-reference" class="flex-1">
+                ${generateMenuItemOptions()}
+              </select>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">Placement will take effect after saving</p>
+          </div>
+          
           <button id="save-styles-btn" class="button button-primary mt-2">Save Styles</button>
         </div>
       </div>
@@ -568,6 +656,24 @@
     });
 
     return modalContent;
+  }
+
+  // Generate options for menu placement dropdown
+  function generateMenuItemOptions() {
+    let options = "";
+
+    // Sort menu items by label for easier selection
+    const sortedItems = Object.values(menuItems).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+
+    sortedItems.forEach((item) => {
+      const selected =
+        item.id === config.placement.referenceElement ? "selected" : "";
+      options += `<option value="${item.id}" ${selected}>${item.label}</option>`;
+    });
+
+    return options;
   }
 
   // Toggle the privacy checker
@@ -1006,16 +1112,35 @@
     const warningHeaderBg = document.getElementById(
       "warning-header-text"
     ).value;
+    const placementPosition =
+      document.getElementById("placement-position").value;
+    const placementReference = document.getElementById(
+      "placement-reference"
+    ).value;
 
+    // Save style settings
     config.styles.highlightColor = highlightColor;
     config.styles.borderWidth = borderWidth;
     config.styles.warningHeaderBg = warningHeaderBg;
+
+    // Save placement settings
+    const placementChanged =
+      config.placement.position !== placementPosition ||
+      config.placement.referenceElement !== placementReference;
+
+    config.placement.position = placementPosition;
+    config.placement.referenceElement = placementReference;
 
     saveConfig();
 
     // Update UI if there are active matches
     if (lastActiveMatches.length > 0) {
       updateChatInputStyle(true);
+    }
+
+    // Reposition the button if placement changed
+    if (placementChanged) {
+      setupPrivacyButton();
     }
 
     // Show a success message
