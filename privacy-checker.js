@@ -217,7 +217,33 @@
 
     // Update UI based on matches
     updateChatInputStyle(activeMatches.length > 0);
-    lastActiveMatches = activeMatches;
+
+    // Only update if matches have changed
+    if (!arraysEqual(lastActiveMatches, activeMatches)) {
+      lastActiveMatches = activeMatches;
+      // If warning is already showing, update it to reflect new matches
+      if (document.getElementById("privacy-warning-tooltip")) {
+        showPrivacyWarning();
+      }
+    }
+  }
+
+  // Helper function to compare arrays of matches
+  function arraysEqual(arr1, arr2) {
+    if (arr1.length !== arr2.length) return false;
+
+    // Sort both arrays to ensure consistent comparison
+    const sorted1 = [...arr1].sort((a, b) => a.index - b.index);
+    const sorted2 = [...arr2].sort((a, b) => a.index - b.index);
+
+    return sorted1.every((match, index) => {
+      const match2 = sorted2[index];
+      return (
+        match.ruleName === match2.ruleName &&
+        match.matchedText === match2.matchedText &&
+        match.index === match2.index
+      );
+    });
   }
 
   // Update the chat input style based on whether sensitive info was detected
@@ -242,6 +268,7 @@
   // Show privacy warning tooltip
   function showPrivacyWarning() {
     let warningElement = document.getElementById("privacy-warning-tooltip");
+    const container = chatInputElement.parentElement;
 
     if (!warningElement) {
       warningElement = document.createElement("div");
@@ -261,7 +288,6 @@
       warningElement.style.border = "1px solid rgba(255, 255, 255, 0.1)";
       warningElement.style.overflow = "hidden";
 
-      const container = chatInputElement.parentElement;
       if (container) {
         container.style.position = "relative";
         container.appendChild(warningElement);
@@ -288,8 +314,8 @@
       });
     });
 
-    // Populate the warning with details about the matches
-    let warningHTML = `
+    // Create header for the warning
+    const headerHTML = `
       <div style="background-color: ${config.styles.warningHeaderBg}; padding: 8px 12px; font-weight: bold; border-top-left-radius: 6px; border-top-right-radius: 6px;">
         <div style="display: flex; align-items: center;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
@@ -300,26 +326,18 @@
           Privacy Alert: Potentially Sensitive Information Detected
         </div>
       </div>
-      <div style="padding: 10px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-          <thead>
-            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.2); text-align: left;">
-              <th style="padding: 5px;">Rule Name</th>
-              <th style="padding: 5px;">Text</th>
-              <th style="padding: 5px;">Position</th>
-            </tr>
-          </thead>
-          <tbody>
     `;
 
-    // Add each match to the table
+    // Start building table rows
+    let tableRowsHTML = "";
     let hasMatches = false;
+
     Object.entries(matchesByRule).forEach(([ruleName, matches]) => {
       matches.forEach((match, index) => {
         hasMatches = true;
         // Safely escape HTML to prevent XSS
         const safeText = match.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        warningHTML += `
+        tableRowsHTML += `
           <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
             <td style="padding: 5px;">${index === 0 ? ruleName : ""}</td>
             <td style="padding: 5px;"><code style="background-color: rgba(${hexToRgb(
@@ -331,7 +349,19 @@
       });
     });
 
-    warningHTML += `
+    // Build the content area with table
+    const contentHTML = `
+      <div style="padding: 10px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.2); text-align: left;">
+              <th style="padding: 5px;">Rule Name</th>
+              <th style="padding: 5px;">Text</th>
+              <th style="padding: 5px;">Position</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRowsHTML}
           </tbody>
         </table>
         ${
@@ -342,7 +372,8 @@
       </div>
     `;
 
-    warningElement.innerHTML = warningHTML;
+    // Update the DOM with new content
+    warningElement.innerHTML = headerHTML + contentHTML;
   }
 
   // Helper function to convert hex to RGB
@@ -405,58 +436,6 @@
       </div>
 
       <div class="modal-section">
-        <div class="modal-section-title mb-2">Style Settings</div>
-        
-        <div class="form-group">
-          <label for="highlight-color-input">Highlight Color</label>
-          <div class="flex items-center">
-            <input type="color" id="highlight-color-input" value="${
-              config.styles.highlightColor
-            }" 
-              style="width: 50px; height: 30px; background: transparent; border: none; padding: 0; margin-right: 10px;">
-            <input type="text" id="highlight-color-text" value="${
-              config.styles.highlightColor
-            }" 
-              style="flex: 1;">
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label for="border-width-input">Border Width</label>
-          <select id="border-width-input" class="w-full">
-            <option value="1px" ${
-              config.styles.borderWidth === "1px" ? "selected" : ""
-            }>Thin (1px)</option>
-            <option value="2px" ${
-              config.styles.borderWidth === "2px" ? "selected" : ""
-            }>Medium (2px)</option>
-            <option value="3px" ${
-              config.styles.borderWidth === "3px" ? "selected" : ""
-            }>Thick (3px)</option>
-            <option value="4px" ${
-              config.styles.borderWidth === "4px" ? "selected" : ""
-            }>Very Thick (4px)</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label for="warning-header-bg-input">Warning Header Color</label>
-          <div class="flex items-center">
-            <input type="color" id="warning-header-bg-input" value="${
-              config.styles.warningHeaderBg
-            }" 
-              style="width: 50px; height: 30px; background: transparent; border: none; padding: 0; margin-right: 10px;">
-            <input type="text" id="warning-header-text" value="${
-              config.styles.warningHeaderBg
-            }" 
-              style="flex: 1;">
-          </div>
-        </div>
-        
-        <button id="save-styles-btn" class="button button-primary mt-2">Save Styles</button>
-      </div>
-
-      <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
           <label class="modal-section-title">Privacy Rules</label>
           <button id="add-rule-btn" class="button button-primary">Add Rule</button>
@@ -466,7 +445,82 @@
         </div>
       </div>
 
+      <div class="modal-section">
+        <div class="flex items-center justify-between mb-2">
+          <label class="modal-section-title">Appearance Settings</label>
+          <button id="toggle-style-settings" class="button button-secondary text-xs py-1">
+            <span id="toggle-style-text">Show</span> <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1" id="toggle-style-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+        </div>
+        
+        <div id="style-settings-content" class="space-y-3" style="display: none;">
+          <div class="form-group">
+            <label for="highlight-color-input">Highlight Color</label>
+            <div class="flex items-center">
+              <input type="color" id="highlight-color-input" value="${
+                config.styles.highlightColor
+              }" 
+                style="width: 50px; height: 30px; background: transparent; border: none; padding: 0; margin-right: 10px;">
+              <input type="text" id="highlight-color-text" value="${
+                config.styles.highlightColor
+              }" 
+                style="flex: 1;">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="border-width-input">Border Width</label>
+            <select id="border-width-input" class="w-full">
+              <option value="1px" ${
+                config.styles.borderWidth === "1px" ? "selected" : ""
+              }>Thin (1px)</option>
+              <option value="2px" ${
+                config.styles.borderWidth === "2px" ? "selected" : ""
+              }>Medium (2px)</option>
+              <option value="3px" ${
+                config.styles.borderWidth === "3px" ? "selected" : ""
+              }>Thick (3px)</option>
+              <option value="4px" ${
+                config.styles.borderWidth === "4px" ? "selected" : ""
+              }>Very Thick (4px)</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="warning-header-bg-input">Warning Header Color</label>
+            <div class="flex items-center">
+              <input type="color" id="warning-header-bg-input" value="${
+                config.styles.warningHeaderBg
+              }" 
+                style="width: 50px; height: 30px; background: transparent; border: none; padding: 0; margin-right: 10px;">
+              <input type="text" id="warning-header-text" value="${
+                config.styles.warningHeaderBg
+              }" 
+                style="flex: 1;">
+            </div>
+          </div>
+          
+          <button id="save-styles-btn" class="button button-primary mt-2">Save Styles</button>
+        </div>
+      </div>
+
       <div class="button-group">
+        <button id="export-rules-btn" class="button button-secondary" title="Export your rules to share or backup">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export
+        </button>
+        <button id="import-rules-btn" class="button button-secondary" title="Import rules from another instance">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Import
+        </button>
         <div style="flex-grow: 1;"></div>
         <button id="close-privacy-modal" class="button button-danger">Close</button>
       </div>
@@ -485,6 +539,21 @@
         togglePrivacyChecker();
       } else if (e.target.id === "save-styles-btn") {
         saveStyleSettings();
+      } else if (
+        e.target.id === "toggle-style-settings" ||
+        e.target.closest("#toggle-style-settings")
+      ) {
+        toggleStyleSettings();
+      } else if (
+        e.target.id === "export-rules-btn" ||
+        e.target.closest("#export-rules-btn")
+      ) {
+        exportRules();
+      } else if (
+        e.target.id === "import-rules-btn" ||
+        e.target.closest("#import-rules-btn")
+      ) {
+        importRules();
       }
 
       // Prevent event propagation to avoid interfering with other modals
@@ -495,13 +564,19 @@
     modalContent.addEventListener("input", (e) => {
       if (e.target.id === "highlight-color-input") {
         document.getElementById("highlight-color-text").value = e.target.value;
+        applyStyleChanges();
       } else if (e.target.id === "highlight-color-text") {
         document.getElementById("highlight-color-input").value = e.target.value;
+        applyStyleChanges();
       } else if (e.target.id === "warning-header-bg-input") {
         document.getElementById("warning-header-text").value = e.target.value;
+        applyStyleChanges();
       } else if (e.target.id === "warning-header-text") {
         document.getElementById("warning-header-bg-input").value =
           e.target.value;
+        applyStyleChanges();
+      } else if (e.target.id === "border-width-input") {
+        applyStyleChanges();
       }
     });
 
@@ -732,6 +807,8 @@
             <span>Case Sensitive</span>
           </label>
         </div>
+        
+        <div id="regex-validation-message" class="validation-message" style="display: none; color: #f87171; font-size: 12px; margin-top: 6px;"></div>
       </div>
       
       <div class="button-group">
@@ -745,11 +822,45 @@
     const caseSensitiveContainer = editorContent.querySelector(
       "#case-sensitive-container"
     );
+    const patternInput = editorContent.querySelector("#rule-pattern-input");
+    const validationMessage = editorContent.querySelector(
+      "#regex-validation-message"
+    );
 
     ruleTypeInput.addEventListener("change", () => {
       caseSensitiveContainer.style.display =
         ruleTypeInput.value === "string" ? "block" : "none";
+
+      // Clear validation message when switching types
+      validationMessage.style.display = "none";
+
+      // Validate regex when switching to regex type
+      if (ruleTypeInput.value === "regex" && patternInput.value) {
+        validateRegex(patternInput.value);
+      }
     });
+
+    // Add validation for regex pattern
+    patternInput.addEventListener("input", () => {
+      if (ruleTypeInput.value === "regex") {
+        validateRegex(patternInput.value);
+      } else {
+        validationMessage.style.display = "none";
+      }
+    });
+
+    // Validate regex pattern
+    function validateRegex(pattern) {
+      try {
+        new RegExp(pattern);
+        validationMessage.style.display = "none";
+        return true;
+      } catch (e) {
+        validationMessage.textContent = `Invalid regex: ${e.message}`;
+        validationMessage.style.display = "block";
+        return false;
+      }
+    }
 
     const cancelButton = editorContent.querySelector("#cancel-rule-edit");
     cancelButton.addEventListener("click", (e) => {
@@ -774,6 +885,11 @@
       if (!name || !pattern) {
         alert("Name and pattern are required");
         return;
+      }
+
+      // Validate regex before saving
+      if (type === "regex" && !validateRegex(pattern)) {
+        return; // Don't save if regex is invalid
       }
 
       if (existingRule) {
@@ -828,6 +944,56 @@
     });
   }
 
+  // Toggle style settings section visibility
+  function toggleStyleSettings() {
+    const styleContent = document.getElementById("style-settings-content");
+    const toggleText = document.getElementById("toggle-style-text");
+    const toggleIcon = document.getElementById("toggle-style-icon");
+
+    if (styleContent.style.display === "none") {
+      styleContent.style.display = "block";
+      toggleText.textContent = "Hide";
+      toggleIcon.innerHTML = '<polyline points="18 15 12 9 6 15"></polyline>';
+    } else {
+      styleContent.style.display = "none";
+      toggleText.textContent = "Show";
+      toggleIcon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+    }
+  }
+
+  // Apply style changes in real-time without saving
+  function applyStyleChanges() {
+    const highlightColor = document.getElementById(
+      "highlight-color-text"
+    ).value;
+    const borderWidth = document.getElementById("border-width-input").value;
+    const warningHeaderBg = document.getElementById(
+      "warning-header-text"
+    ).value;
+
+    // Apply styles temporarily without saving to config
+    if (lastActiveMatches.length > 0) {
+      chatInputElement.style.border = `${borderWidth} solid ${highlightColor}`;
+      chatInputElement.style.boxShadow = `0 0 5px ${highlightColor}`;
+
+      // Update warning header if visible
+      const warningHeader = document.querySelector(
+        "#privacy-warning-tooltip > div:first-child"
+      );
+      if (warningHeader) {
+        warningHeader.style.backgroundColor = warningHeaderBg;
+      }
+
+      // Update highlighted text color in warnings
+      const highlightedTexts = document.querySelectorAll(
+        "#privacy-warning-tooltip code"
+      );
+      highlightedTexts.forEach((elem) => {
+        elem.style.backgroundColor = `rgba(${hexToRgb(highlightColor)}, 0.3)`;
+      });
+    }
+  }
+
   // Save style settings
   function saveStyleSettings() {
     const highlightColor = document.getElementById(
@@ -861,6 +1027,103 @@
     }, 1500);
   }
 
+  // Export rules to JSON
+  function exportRules() {
+    // Create export data with just the rules
+    const exportData = {
+      rules: config.rules,
+    };
+
+    // Convert to JSON string
+    const jsonData = JSON.stringify(exportData, null, 2);
+
+    // Create a downloadable blob
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    // Create download link
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.download = "privacy-checker-rules.json";
+
+    // Add to DOM, click it, and remove it
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+
+    // Clean up the URL
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+
+  // Import rules from JSON
+  function importRules() {
+    // Create file input
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json";
+
+    // Handle file selection
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          const importedData = JSON.parse(event.target.result);
+
+          // Validate imported data
+          if (!importedData.rules || !Array.isArray(importedData.rules)) {
+            throw new Error("Invalid format: No rules array found");
+          }
+
+          // Import rules - delta update (add new ones, don't replace existing)
+          let addedCount = 0;
+
+          importedData.rules.forEach((importedRule) => {
+            // Check if rule exists by checking pattern and type (not just by name)
+            const ruleExists = config.rules.some(
+              (existingRule) =>
+                existingRule.type === importedRule.type &&
+                existingRule.pattern === importedRule.pattern
+            );
+
+            // Add new rule if it doesn't exist
+            if (!ruleExists) {
+              // Ensure the rule has a unique ID
+              const newId = config.nextRuleId++;
+              config.rules.push({
+                ...importedRule,
+                id: newId,
+              });
+              addedCount++;
+            }
+          });
+
+          // Save changes and refresh UI
+          saveConfig();
+          populateRulesList();
+
+          // Re-check the current input for matches
+          checkForSensitiveInfo();
+
+          // Show success message
+          alert(`Import complete. Added ${addedCount} new rules.`);
+        } catch (error) {
+          console.error("Import error:", error);
+          alert(`Error importing rules: ${error.message}`);
+        }
+      };
+
+      reader.readAsText(file);
+    });
+
+    // Trigger file selection
+    document.body.appendChild(fileInput);
+    fileInput.click();
+    document.body.removeChild(fileInput);
+  }
+
   // Add CSS for the extension
   function addStyles() {
     const styleElement = document.createElement("style");
@@ -888,7 +1151,7 @@
         padding: 8px;
         border-radius: 4px;
         z-index: 1000;
-        margin-top: 8px;
+        margin-top: 50px;
         font-size: 12px;
         max-width: 300px;
       }
@@ -1257,6 +1520,26 @@
         background-color: rgb(24, 24, 27);
         padding: 0.125rem 0.25rem;
         border-radius: 0.25rem;
+      }
+
+      /* Add animation for collapsible content */
+      #style-settings-content {
+        max-height: 0;
+        transition: max-height 0.3s ease-out;
+        overflow: hidden;
+      }
+      
+      #style-settings-content.expanded {
+        max-height: 500px;
+      }
+      
+      /* Add icon animation */
+      #toggle-style-icon {
+        transition: transform 0.3s ease;
+      }
+      
+      #toggle-style-icon.rotated {
+        transform: rotate(180deg);
       }
     `;
     document.head.appendChild(styleElement);
