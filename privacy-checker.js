@@ -53,6 +53,11 @@
       },
     ],
     nextRuleId: 7,
+    styles: {
+      highlightColor: "#ff0000",
+      borderWidth: "2px",
+      warningHeaderBg: "#d00000",
+    },
   };
 
   // DOM Elements
@@ -80,6 +85,15 @@
         config.enabled = parsedConfig.enabled ?? config.enabled;
         config.rules = parsedConfig.rules ?? config.rules;
         config.nextRuleId = parsedConfig.nextRuleId ?? config.nextRuleId;
+
+        // Load styles with defaults if not present
+        if (parsedConfig.styles) {
+          config.styles = {
+            highlightColor: parsedConfig.styles.highlightColor ?? "#ff0000",
+            borderWidth: parsedConfig.styles.borderWidth ?? "2px",
+            warningHeaderBg: parsedConfig.styles.warningHeaderBg ?? "#d00000",
+          };
+        }
       } catch (e) {
         console.error("Failed to parse saved privacy checker config", e);
       }
@@ -165,21 +179,27 @@
 
       let matches = [];
       if (rule.type === "regex") {
-        const regex = new RegExp(rule.pattern, "g");
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-          matches.push({
-            ruleName: rule.name,
-            ruleId: rule.id,
-            matchedText: match[0],
-            index: match.index,
-          });
+        try {
+          const regex = new RegExp(rule.pattern, "g");
+          let match;
+          while ((match = regex.exec(text)) !== null) {
+            matches.push({
+              ruleName: rule.name,
+              ruleId: rule.id,
+              matchedText: match[0],
+              index: match.index,
+            });
+          }
+        } catch (e) {
+          console.error(`Invalid regex pattern in rule ${rule.name}:`, e);
         }
       } else if (rule.type === "string") {
         const searchText = rule.caseSensitive ? text : text.toLowerCase();
         const searchPattern = rule.caseSensitive
           ? rule.pattern
           : rule.pattern.toLowerCase();
+
+        // Use indexOf to find all occurrences
         let index = searchText.indexOf(searchPattern);
         while (index !== -1) {
           matches.push({
@@ -205,8 +225,8 @@
     if (!chatInputElement) return;
 
     if (hasSensitiveInfo) {
-      chatInputElement.style.border = "2px solid #ff0000";
-      chatInputElement.style.boxShadow = "0 0 5px #ff0000";
+      chatInputElement.style.border = `${config.styles.borderWidth} solid ${config.styles.highlightColor}`;
+      chatInputElement.style.boxShadow = `0 0 5px ${config.styles.highlightColor}`;
 
       // Show tooltip with warning
       showPrivacyWarning();
@@ -229,14 +249,17 @@
       warningElement.style.position = "absolute";
       warningElement.style.top = "100%";
       warningElement.style.left = "0";
-      warningElement.style.backgroundColor = "#ff0000";
+      warningElement.style.backgroundColor = "#1f1f1f";
       warningElement.style.color = "white";
-      warningElement.style.padding = "8px";
-      warningElement.style.borderRadius = "4px";
+      warningElement.style.padding = "0";
+      warningElement.style.borderRadius = "6px";
       warningElement.style.zIndex = "1000";
       warningElement.style.marginTop = "8px";
       warningElement.style.fontSize = "12px";
-      warningElement.style.maxWidth = "400px";
+      warningElement.style.maxWidth = "500px";
+      warningElement.style.boxShadow = "0 4px 15px rgba(0, 0, 0, 0.3)";
+      warningElement.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+      warningElement.style.overflow = "hidden";
 
       const container = chatInputElement.parentElement;
       if (container) {
@@ -245,41 +268,94 @@
       }
     }
 
-    // Organize matches by rule
+    // Organize matches by rule and determine positions
     const matchesByRule = {};
     lastActiveMatches.forEach((match) => {
       if (!matchesByRule[match.ruleName]) {
         matchesByRule[match.ruleName] = [];
       }
-      // Only add unique matched text for each rule
-      if (!matchesByRule[match.ruleName].includes(match.matchedText)) {
-        matchesByRule[match.ruleName].push(match.matchedText);
-      }
+
+      // Calculate line and character position
+      const textBeforeMatch = chatInputElement.value.substring(0, match.index);
+      const lines = textBeforeMatch.split("\n");
+      const lineNumber = lines.length;
+      const charPosition = lines[lines.length - 1].length + 1;
+
+      // Add match with position info
+      matchesByRule[match.ruleName].push({
+        text: match.matchedText,
+        position: `Line ${lineNumber}, Char ${charPosition}`,
+      });
     });
 
     // Populate the warning with details about the matches
-    let warningText = "Potential privacy concerns detected:";
+    let warningHTML = `
+      <div style="background-color: ${config.styles.warningHeaderBg}; padding: 8px 12px; font-weight: bold; border-top-left-radius: 6px; border-top-right-radius: 6px;">
+        <div style="display: flex; align-items: center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          Privacy Alert: Potentially Sensitive Information Detected
+        </div>
+      </div>
+      <div style="padding: 10px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.2); text-align: left;">
+              <th style="padding: 5px;">Rule Name</th>
+              <th style="padding: 5px;">Text</th>
+              <th style="padding: 5px;">Position</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
 
-    Object.entries(matchesByRule).forEach(([ruleName, matchedTexts]) => {
-      warningText += `<br><span class="font-bold">• ${ruleName}:</span>`;
-
-      // Show each unique matched text for this rule (limit to 3 per rule)
-      const limitedMatches = matchedTexts.slice(0, 3);
-      limitedMatches.forEach((text) => {
+    // Add each match to the table
+    let hasMatches = false;
+    Object.entries(matchesByRule).forEach(([ruleName, matches]) => {
+      matches.forEach((match, index) => {
+        hasMatches = true;
         // Safely escape HTML to prevent XSS
-        const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        warningText += `<br>&nbsp;&nbsp;&nbsp;"<code class="bg-red-800 px-1 rounded">${safeText}</code>"`;
+        const safeText = match.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        warningHTML += `
+          <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+            <td style="padding: 5px;">${index === 0 ? ruleName : ""}</td>
+            <td style="padding: 5px;"><code style="background-color: rgba(${hexToRgb(
+              config.styles.highlightColor
+            )}, 0.3); padding: 2px 4px; border-radius: 3px;">${safeText}</code></td>
+            <td style="padding: 5px;">${match.position}</td>
+          </tr>
+        `;
       });
-
-      // Show ellipsis if there are more matches
-      if (matchedTexts.length > 3) {
-        warningText += `<br>&nbsp;&nbsp;&nbsp;(${
-          matchedTexts.length - 3
-        } more match${matchedTexts.length - 3 > 1 ? "es" : ""})`;
-      }
     });
 
-    warningElement.innerHTML = warningText;
+    warningHTML += `
+          </tbody>
+        </table>
+        ${
+          !hasMatches
+            ? '<p style="text-align: center; margin: 10px 0;">No matches found</p>'
+            : ""
+        }
+      </div>
+    `;
+
+    warningElement.innerHTML = warningHTML;
+  }
+
+  // Helper function to convert hex to RGB
+  function hexToRgb(hex) {
+    // Remove # if present
+    hex = hex.replace("#", "");
+
+    // Parse the hex values
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    return `${r}, ${g}, ${b}`;
   }
 
   // Hide privacy warning tooltip
@@ -329,6 +405,58 @@
       </div>
 
       <div class="modal-section">
+        <div class="modal-section-title mb-2">Style Settings</div>
+        
+        <div class="form-group">
+          <label for="highlight-color-input">Highlight Color</label>
+          <div class="flex items-center">
+            <input type="color" id="highlight-color-input" value="${
+              config.styles.highlightColor
+            }" 
+              style="width: 50px; height: 30px; background: transparent; border: none; padding: 0; margin-right: 10px;">
+            <input type="text" id="highlight-color-text" value="${
+              config.styles.highlightColor
+            }" 
+              style="flex: 1;">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="border-width-input">Border Width</label>
+          <select id="border-width-input" class="w-full">
+            <option value="1px" ${
+              config.styles.borderWidth === "1px" ? "selected" : ""
+            }>Thin (1px)</option>
+            <option value="2px" ${
+              config.styles.borderWidth === "2px" ? "selected" : ""
+            }>Medium (2px)</option>
+            <option value="3px" ${
+              config.styles.borderWidth === "3px" ? "selected" : ""
+            }>Thick (3px)</option>
+            <option value="4px" ${
+              config.styles.borderWidth === "4px" ? "selected" : ""
+            }>Very Thick (4px)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="warning-header-bg-input">Warning Header Color</label>
+          <div class="flex items-center">
+            <input type="color" id="warning-header-bg-input" value="${
+              config.styles.warningHeaderBg
+            }" 
+              style="width: 50px; height: 30px; background: transparent; border: none; padding: 0; margin-right: 10px;">
+            <input type="text" id="warning-header-text" value="${
+              config.styles.warningHeaderBg
+            }" 
+              style="flex: 1;">
+          </div>
+        </div>
+        
+        <button id="save-styles-btn" class="button button-primary mt-2">Save Styles</button>
+      </div>
+
+      <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
           <label class="modal-section-title">Privacy Rules</label>
           <button id="add-rule-btn" class="button button-primary">Add Rule</button>
@@ -339,6 +467,7 @@
       </div>
 
       <div class="button-group">
+        <div style="flex-grow: 1;"></div>
         <button id="close-privacy-modal" class="button button-danger">Close</button>
       </div>
     `;
@@ -354,10 +483,26 @@
         addNewRule();
       } else if (e.target.id === "privacy-checker-toggle") {
         togglePrivacyChecker();
+      } else if (e.target.id === "save-styles-btn") {
+        saveStyleSettings();
       }
 
       // Prevent event propagation to avoid interfering with other modals
       e.stopPropagation();
+    });
+
+    // Add event listeners for color inputs to sync
+    modalContent.addEventListener("input", (e) => {
+      if (e.target.id === "highlight-color-input") {
+        document.getElementById("highlight-color-text").value = e.target.value;
+      } else if (e.target.id === "highlight-color-text") {
+        document.getElementById("highlight-color-input").value = e.target.value;
+      } else if (e.target.id === "warning-header-bg-input") {
+        document.getElementById("warning-header-text").value = e.target.value;
+      } else if (e.target.id === "warning-header-text") {
+        document.getElementById("warning-header-bg-input").value =
+          e.target.value;
+      }
     });
 
     return modalContent;
@@ -424,8 +569,20 @@
             <span class="rule-name font-medium text-white">${rule.name}</span>
           </div>
           <div class="flex space-x-2">
-            <button class="edit-rule-btn button button-secondary py-0.5 px-2 text-xs">Edit</button>
-            <button class="delete-rule-btn button button-danger py-0.5 px-2 text-xs">Delete</button>
+            <button class="edit-rule-btn icon-button edit" title="Edit Rule">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button class="delete-rule-btn icon-button delete" title="Delete Rule">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
           </div>
         </div>
         <div class="rule-details">
@@ -671,6 +828,39 @@
     });
   }
 
+  // Save style settings
+  function saveStyleSettings() {
+    const highlightColor = document.getElementById(
+      "highlight-color-text"
+    ).value;
+    const borderWidth = document.getElementById("border-width-input").value;
+    const warningHeaderBg = document.getElementById(
+      "warning-header-text"
+    ).value;
+
+    config.styles.highlightColor = highlightColor;
+    config.styles.borderWidth = borderWidth;
+    config.styles.warningHeaderBg = warningHeaderBg;
+
+    saveConfig();
+
+    // Update UI if there are active matches
+    if (lastActiveMatches.length > 0) {
+      updateChatInputStyle(true);
+    }
+
+    // Show a success message
+    const saveBtn = document.getElementById("save-styles-btn");
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = "Saved!";
+    saveBtn.disabled = true;
+
+    setTimeout(() => {
+      saveBtn.textContent = originalText;
+      saveBtn.disabled = false;
+    }, 1500);
+  }
+
   // Add CSS for the extension
   function addStyles() {
     const styleElement = document.createElement("style");
@@ -684,6 +874,10 @@
       }
       .toggle-label {
         transition: background-color 0.2s ease;
+      }
+      .toggle-checkbox:focus {
+        outline: none;
+        box-shadow: none;
       }
       .privacy-warning {
         position: absolute;
@@ -734,6 +928,34 @@
         position: relative;
         z-index: 100000;
         border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* Icon Buttons */
+      .icon-button {
+        background: transparent;
+        border: none;
+        padding: 4px;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
+        transition: all 0.2s;
+      }
+
+      .icon-button:hover {
+        opacity: 1;
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+
+      .icon-button.edit {
+        color: #60a5fa;
+      }
+
+      .icon-button.delete {
+        color: #f87171;
       }
 
       /* Tooltip styles */
