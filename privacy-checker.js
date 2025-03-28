@@ -62,6 +62,10 @@
       position: "before",
       referenceElement: "workspace-tab-settings",
     },
+    menuButton: {
+      show: true,
+      shortcut: "Shift+Alt+P",
+    },
   };
 
   // DOM Elements
@@ -76,7 +80,15 @@
   function init() {
     loadConfig();
     scanMenuItems();
-    setupPrivacyButton();
+
+    // Setup menu button if enabled
+    if (config.menuButton.show) {
+      setupPrivacyButton();
+    }
+
+    // Setup keyboard shortcut listener
+    setupKeyboardShortcut();
+
     setupChatMonitoring();
     setupModalContainer();
   }
@@ -108,6 +120,14 @@
             referenceElement:
               parsedConfig.placement.referenceElement ??
               "workspace-tab-settings",
+          };
+        }
+
+        // Load menu button settings
+        if (parsedConfig.menuButton) {
+          config.menuButton = {
+            show: parsedConfig.menuButton.show ?? true,
+            shortcut: parsedConfig.menuButton.shortcut ?? "Shift+Alt+P",
           };
         }
       } catch (e) {
@@ -558,9 +578,40 @@
           </div>
           
           <div class="form-group">
+            <label>Menu & Keyboard Controls</label>
+            <div class="space-y-2">
+              <div class="flex items-center">
+                <input type="checkbox" id="show-menu-btn" class="mr-2" ${
+                  config.menuButton.show ? "checked" : ""
+                }>
+                <label for="show-menu-btn" class="text-sm">Show Menu Button</label>
+              </div>
+              
+              <div class="flex items-center">
+                <label for="keyboard-shortcut" class="text-sm mr-2 w-32">Keyboard Shortcut:</label>
+                <div class="relative flex-grow">
+                  <input type="text" id="keyboard-shortcut" value="${
+                    config.menuButton.shortcut
+                  }" 
+                    class="w-full" ${!config.menuButton.show ? "required" : ""}>
+                  <button id="record-shortcut" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-400 hover:text-blue-500">
+                    Record
+                  </button>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400">Press the Record button and type your desired shortcut (e.g., Alt+P)</p>
+              <div id="shortcut-error" class="text-red-500 text-xs hidden">A keyboard shortcut is required when menu button is hidden</div>
+            </div>
+          </div>
+          
+          <div class="form-group menu-placement-section" ${
+            !config.menuButton.show ? 'style="opacity:0.5;"' : ""
+          }>
             <label for="menu-placement">Menu Icon Placement</label>
             <div class="flex items-center space-x-2">
-              <select id="placement-position" class="flex-1">
+              <select id="placement-position" class="flex-1" ${
+                !config.menuButton.show ? "disabled" : ""
+              }>
                 <option value="before" ${
                   config.placement.position === "before" ? "selected" : ""
                 }>Before</option>
@@ -568,7 +619,9 @@
                   config.placement.position === "after" ? "selected" : ""
                 }>After</option>
               </select>
-              <select id="placement-reference" class="flex-1">
+              <select id="placement-reference" class="flex-1" ${
+                !config.menuButton.show ? "disabled" : ""
+              }>
                 ${generateMenuItemOptions()}
               </select>
             </div>
@@ -629,6 +682,8 @@
         e.target.closest("#import-rules-btn")
       ) {
         importRules();
+      } else if (e.target.id === "record-shortcut") {
+        recordShortcut(e);
       }
 
       // Prevent event propagation to avoid interfering with other modals
@@ -652,6 +707,36 @@
         applyStyleChanges();
       } else if (e.target.id === "border-width-input") {
         applyStyleChanges();
+      } else if (e.target.id === "show-menu-btn") {
+        // Toggle menu placement section opacity and disabled state
+        const showMenu = e.target.checked;
+        const placementSection = document.querySelector(
+          ".menu-placement-section"
+        );
+        const placementPosition = document.getElementById("placement-position");
+        const placementReference = document.getElementById(
+          "placement-reference"
+        );
+        const shortcutInput = document.getElementById("keyboard-shortcut");
+        const shortcutError = document.getElementById("shortcut-error");
+
+        if (placementSection) {
+          placementSection.style.opacity = showMenu ? "1" : "0.5";
+          placementPosition.disabled = !showMenu;
+          placementReference.disabled = !showMenu;
+        }
+
+        // Show error if menu button is hidden and no shortcut is provided
+        if (
+          !showMenu &&
+          (!shortcutInput.value || shortcutInput.value.trim() === "")
+        ) {
+          shortcutError.classList.remove("hidden");
+          shortcutInput.setAttribute("required", "required");
+        } else {
+          shortcutError.classList.add("hidden");
+          if (showMenu) shortcutInput.removeAttribute("required");
+        }
       }
     });
 
@@ -1117,6 +1202,17 @@
     const placementReference = document.getElementById(
       "placement-reference"
     ).value;
+    const showMenuButton = document.getElementById("show-menu-btn").checked;
+    const keyboardShortcut = document.getElementById("keyboard-shortcut").value;
+
+    // Validate: if menu button is hidden, shortcut is required
+    if (
+      !showMenuButton &&
+      (!keyboardShortcut || keyboardShortcut.trim() === "")
+    ) {
+      document.getElementById("shortcut-error").classList.remove("hidden");
+      return;
+    }
 
     // Save style settings
     config.styles.highlightColor = highlightColor;
@@ -1131,6 +1227,14 @@
     config.placement.position = placementPosition;
     config.placement.referenceElement = placementReference;
 
+    // Save menu button settings
+    const menuButtonChanged =
+      config.menuButton.show !== showMenuButton ||
+      config.menuButton.shortcut !== keyboardShortcut;
+
+    config.menuButton.show = showMenuButton;
+    config.menuButton.shortcut = keyboardShortcut;
+
     saveConfig();
 
     // Update UI if there are active matches
@@ -1138,8 +1242,26 @@
       updateChatInputStyle(true);
     }
 
-    // Reposition the button if placement changed
-    if (placementChanged) {
+    // Handle menu button changes
+    if (menuButtonChanged) {
+      // Update keyboard shortcut handler
+      setupKeyboardShortcut();
+
+      // Add or remove menu button
+      if (showMenuButton) {
+        if (!privacyButton || !privacyButton.parentNode) {
+          setupPrivacyButton();
+        } else if (placementChanged) {
+          // Reposition existing button if placement changed
+          setupPrivacyButton();
+        }
+      } else if (privacyButton && privacyButton.parentNode) {
+        // Remove menu button if it should be hidden
+        privacyButton.parentNode.removeChild(privacyButton);
+        privacyButton = null;
+      }
+    } else if (placementChanged && showMenuButton) {
+      // Reposition button if placement changed and button is visible
       setupPrivacyButton();
     }
 
@@ -1250,6 +1372,158 @@
     document.body.appendChild(fileInput);
     fileInput.click();
     document.body.removeChild(fileInput);
+  }
+
+  // Setup keyboard shortcut listener
+  function setupKeyboardShortcut() {
+    document.removeEventListener("keydown", handleKeyboardShortcut);
+    document.addEventListener("keydown", handleKeyboardShortcut);
+  }
+
+  // Handle keyboard shortcut keydown event
+  function handleKeyboardShortcut(e) {
+    const shortcut = parseShortcut(config.menuButton.shortcut);
+
+    // Check if the pressed keys match the shortcut
+    if (isShortcutMatch(e, shortcut)) {
+      e.preventDefault();
+      togglePrivacyModal();
+    }
+  }
+
+  // Parse shortcut string into components
+  function parseShortcut(shortcutStr) {
+    const keys = shortcutStr.split("+");
+    return {
+      ctrl: keys.includes("Ctrl"),
+      alt: keys.includes("Alt"),
+      shift: keys.includes("Shift"),
+      key: keys[keys.length - 1],
+    };
+  }
+
+  // Check if event matches shortcut
+  function isShortcutMatch(event, shortcut) {
+    return (
+      event.ctrlKey === shortcut.ctrl &&
+      event.altKey === shortcut.alt &&
+      event.shiftKey === shortcut.shift &&
+      (event.key.toLowerCase() === shortcut.key.toLowerCase() ||
+        event.code === "Key" + shortcut.key.toUpperCase())
+    );
+  }
+
+  // Record keyboard shortcut
+  function recordShortcut(e) {
+    e.preventDefault();
+
+    const shortcutInput = document.getElementById("keyboard-shortcut");
+    const recordBtn = document.getElementById("record-shortcut");
+
+    // Update button text
+    recordBtn.textContent = "Listening...";
+    recordBtn.classList.add("text-red-500");
+
+    // Clear the input
+    shortcutInput.value = "";
+    shortcutInput.placeholder = "Type a key combination...";
+    shortcutInput.focus();
+
+    // Track which modifier keys are pressed
+    let modifiers = {
+      ctrl: false,
+      alt: false,
+      shift: false,
+      key: "",
+    };
+
+    // Function to update input value
+    function updateInputValue() {
+      let parts = [];
+      if (modifiers.ctrl) parts.push("Ctrl");
+      if (modifiers.alt) parts.push("Alt");
+      if (modifiers.shift) parts.push("Shift");
+      if (modifiers.key && !/^(Control|Alt|Shift)$/.test(modifiers.key)) {
+        parts.push(modifiers.key);
+      }
+
+      shortcutInput.value = parts.join("+");
+
+      // Hide error if value is provided and menu button is hidden
+      const showMenu = document.getElementById("show-menu-btn").checked;
+      const shortcutError = document.getElementById("shortcut-error");
+
+      if (!showMenu && shortcutInput.value.trim() !== "") {
+        shortcutError.classList.add("hidden");
+      }
+    }
+
+    // Keydown handler for recording
+    function handleKeyDown(evt) {
+      evt.preventDefault();
+
+      if (evt.key === "Control" || evt.key === "Ctrl") {
+        modifiers.ctrl = true;
+      } else if (evt.key === "Alt") {
+        modifiers.alt = true;
+      } else if (evt.key === "Shift") {
+        modifiers.shift = true;
+      } else {
+        // For letter keys, store the uppercase version
+        if (evt.code.startsWith("Key")) {
+          modifiers.key = evt.code.replace("Key", "");
+        } else {
+          modifiers.key = evt.key;
+        }
+
+        // Update the input and stop listening
+        updateInputValue();
+        stopListening();
+      }
+
+      updateInputValue();
+    }
+
+    // Keyup handler
+    function handleKeyUp(evt) {
+      if (evt.key === "Control" || evt.key === "Ctrl") {
+        modifiers.ctrl = false;
+      } else if (evt.key === "Alt") {
+        modifiers.alt = false;
+      } else if (evt.key === "Shift") {
+        modifiers.shift = false;
+      }
+
+      updateInputValue();
+    }
+
+    // Stop listening function
+    function stopListening() {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+
+      // Reset button
+      recordBtn.textContent = "Record";
+      recordBtn.classList.remove("text-red-500");
+      shortcutInput.placeholder = "";
+    }
+
+    // Add event listeners
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    // Add a click handler to stop recording if clicked elsewhere
+    function documentClickHandler(evt) {
+      if (evt.target !== shortcutInput && evt.target !== recordBtn) {
+        stopListening();
+        window.removeEventListener("click", documentClickHandler);
+      }
+    }
+
+    // Start listening for clicks after a short delay
+    setTimeout(() => {
+      window.addEventListener("click", documentClickHandler);
+    }, 100);
   }
 
   // Add CSS for the extension
