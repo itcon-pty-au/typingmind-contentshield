@@ -406,7 +406,7 @@
     // Add content to the modal
     modalContent.innerHTML = `
       <div class="modal-header">
-        <h3 class="modal-title">Privacy Checker Settings</h3>
+        <h3 class="modal-title">Privacy Checker</h3>
         <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
       </div>
 
@@ -434,7 +434,7 @@
 
       <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
-          <label class="modal-section-title">Appearance Settings</label>
+          <label class="modal-section-title">Appearance</label>
           <button id="toggle-style-settings" class="button button-primary text-xs py-1">
             <span id="toggle-style-text">Show</span> <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1" id="toggle-style-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
@@ -1575,12 +1575,17 @@
         color: rgb(161, 161, 170);
         font-size: 0.75rem;
         margin-top: 0.25rem;
+        word-break: break-word;
+        overflow-wrap: break-word;
       }
 
       .rule-details code {
         background-color: rgb(24, 24, 27);
         padding: 0.125rem 0.25rem;
         border-radius: 0.25rem;
+        word-break: break-all;
+        white-space: normal;
+        display: inline-block;
       }
 
       /* Style content transitions */
