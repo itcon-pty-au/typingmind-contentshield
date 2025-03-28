@@ -273,20 +273,7 @@
     if (!warningElement) {
       warningElement = document.createElement("div");
       warningElement.id = "privacy-warning-tooltip";
-      warningElement.style.position = "absolute";
-      warningElement.style.top = "100%";
-      warningElement.style.left = "0";
-      warningElement.style.backgroundColor = "#1f1f1f";
-      warningElement.style.color = "white";
-      warningElement.style.padding = "0";
-      warningElement.style.borderRadius = "6px";
-      warningElement.style.zIndex = "1000";
-      warningElement.style.marginTop = "8px";
-      warningElement.style.fontSize = "12px";
-      warningElement.style.maxWidth = "500px";
-      warningElement.style.boxShadow = "0 4px 15px rgba(0, 0, 0, 0.3)";
-      warningElement.style.border = "1px solid rgba(255, 255, 255, 0.1)";
-      warningElement.style.overflow = "hidden";
+      warningElement.className = "privacy-warning-tooltip";
 
       if (container) {
         container.style.position = "relative";
@@ -316,9 +303,9 @@
 
     // Create header for the warning
     const headerHTML = `
-      <div style="background-color: ${config.styles.warningHeaderBg}; padding: 8px 12px; font-weight: bold; border-top-left-radius: 6px; border-top-right-radius: 6px;">
-        <div style="display: flex; align-items: center;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+      <div class="privacy-warning-header" style="background-color: ${config.styles.warningHeaderBg};">
+        <div class="privacy-warning-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="privacy-warning-icon">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
@@ -338,12 +325,12 @@
         // Safely escape HTML to prevent XSS
         const safeText = match.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         tableRowsHTML += `
-          <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-            <td style="padding: 5px;">${index === 0 ? ruleName : ""}</td>
-            <td style="padding: 5px;"><code style="background-color: rgba(${hexToRgb(
+          <tr class="privacy-warning-row">
+            <td class="privacy-warning-cell">${index === 0 ? ruleName : ""}</td>
+            <td class="privacy-warning-cell"><code style="background-color: rgba(${hexToRgb(
               config.styles.highlightColor
-            )}, 0.3); padding: 2px 4px; border-radius: 3px;">${safeText}</code></td>
-            <td style="padding: 5px;">${match.position}</td>
+            )}, 0.3);">${safeText}</code></td>
+            <td class="privacy-warning-cell">${match.position}</td>
           </tr>
         `;
       });
@@ -351,13 +338,13 @@
 
     // Build the content area with table
     const contentHTML = `
-      <div style="padding: 10px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+      <div class="privacy-warning-content">
+        <table class="privacy-warning-table">
           <thead>
-            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.2); text-align: left;">
-              <th style="padding: 5px;">Rule Name</th>
-              <th style="padding: 5px;">Text</th>
-              <th style="padding: 5px;">Position</th>
+            <tr class="privacy-warning-header-row">
+              <th class="privacy-warning-header-cell">Rule Name</th>
+              <th class="privacy-warning-header-cell">Text</th>
+              <th class="privacy-warning-header-cell">Position</th>
             </tr>
           </thead>
           <tbody>
@@ -366,7 +353,7 @@
         </table>
         ${
           !hasMatches
-            ? '<p style="text-align: center; margin: 10px 0;">No matches found</p>'
+            ? '<p class="privacy-warning-no-matches">No matches found</p>'
             : ""
         }
       </div>
@@ -995,16 +982,14 @@
       chatInputElement.style.boxShadow = `0 0 5px ${highlightColor}`;
 
       // Update warning header if visible
-      const warningHeader = document.querySelector(
-        "#privacy-warning-tooltip > div:first-child"
-      );
+      const warningHeader = document.querySelector(".privacy-warning-header");
       if (warningHeader) {
         warningHeader.style.backgroundColor = warningHeaderBg;
       }
 
       // Update highlighted text color in warnings
       const highlightedTexts = document.querySelectorAll(
-        "#privacy-warning-tooltip code"
+        ".privacy-warning-cell code"
       );
       highlightedTexts.forEach((elem) => {
         elem.style.backgroundColor = `rgba(${hexToRgb(highlightColor)}, 0.3)`;
@@ -1160,18 +1145,76 @@
         outline: none;
         box-shadow: none;
       }
-      .privacy-warning {
+
+      /* Privacy warning tooltip */
+      .privacy-warning-tooltip {
         position: absolute;
         top: 100%;
         left: 0;
-        background-color: #ff0000;
+        background-color: #1f1f1f;
         color: white;
-        padding: 8px;
-        border-radius: 4px;
+        padding: 0;
+        border-radius: 6px;
         z-index: 1000;
         margin-top: 50px;
         font-size: 12px;
-        max-width: 300px;
+        max-width: 500px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .privacy-warning-header {
+        padding: 8px 12px;
+        font-weight: bold;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+      }
+
+      .privacy-warning-title {
+        display: flex;
+        align-items: center;
+      }
+
+      .privacy-warning-icon {
+        margin-right: 8px;
+      }
+
+      .privacy-warning-content {
+        padding: 10px;
+      }
+
+      .privacy-warning-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .privacy-warning-header-row {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        text-align: left;
+      }
+
+      .privacy-warning-header-cell {
+        padding: 5px;
+      }
+
+      .privacy-warning-row {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .privacy-warning-cell {
+        padding: 5px;
+      }
+
+      .privacy-warning-cell code {
+        padding: 2px 4px;
+        border-radius: 3px;
+      }
+
+      .privacy-warning-no-matches {
+        text-align: center;
+        margin: 10px 0;
       }
 
       /* Modal styles */
@@ -1546,17 +1589,9 @@
         transition: all 0.3s ease;
       }
       
-      #style-settings-content.expanded {
-        display: block;
-      }
-      
       /* Icon animation */
       #toggle-style-icon {
         transition: transform 0.3s ease;
-      }
-      
-      #toggle-style-icon.rotated {
-        transform: rotate(180deg);
       }
     `;
     document.head.appendChild(styleElement);
