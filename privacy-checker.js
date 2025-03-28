@@ -56,7 +56,7 @@
     styles: {
       highlightColor: "#ff0000",
       borderWidth: "2px",
-      warningHeaderBg: "#d00000",
+      warningHeaderBg: "#1e50c1",
     },
   };
 
@@ -91,7 +91,7 @@
           config.styles = {
             highlightColor: parsedConfig.styles.highlightColor ?? "#ff0000",
             borderWidth: parsedConfig.styles.borderWidth ?? "2px",
-            warningHeaderBg: parsedConfig.styles.warningHeaderBg ?? "#d00000",
+            warningHeaderBg: parsedConfig.styles.warningHeaderBg ?? "#1e50c1",
           };
         }
       } catch (e) {
