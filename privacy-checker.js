@@ -1216,7 +1216,20 @@
         text-align: center;
         margin: 10px 0;
       }
-
+    
+      .privacy-warning {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        z-index: 1000;
+        margin-top: 50px;
+        font-size: 12px;
+        max-width: 300px;
+      }
+      
       /* Modal styles */
       #privacy-checker-modal-container {
         position: fixed;
