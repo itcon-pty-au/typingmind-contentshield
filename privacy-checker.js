@@ -1564,7 +1564,7 @@
       }
 
       .rule-item {
-        background-color: #27272a;
+        background-color: #1d1d21;
         border: 1px solid rgb(63, 63, 70);
         border-radius: 0.375rem;
         padding: 0.5rem;
