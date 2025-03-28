@@ -126,7 +126,11 @@
     agentsButton.parentNode.insertBefore(privacyButton, agentsButton);
 
     // Add click event listener
-    privacyButton.addEventListener("click", togglePrivacyModal);
+    privacyButton.addEventListener("click", (e) => {
+      togglePrivacyModal();
+      // Prevent event propagation to other event handlers
+      e.stopPropagation();
+    });
   }
 
   // Setup monitoring for the chat input field
@@ -298,10 +302,8 @@
     modalContainer.style.bottom = "0";
     modalContainer.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
     modalContainer.style.zIndex = "9999";
-    modalContainer.style.display = "flex";
     modalContainer.style.justifyContent = "center";
     modalContainer.style.alignItems = "center";
-    modalContainer.style.display = "none";
 
     // Create the modal content
     const modalContent = createModalContent();
@@ -314,42 +316,42 @@
   // Create the modal content
   function createModalContent() {
     const modalContent = document.createElement("div");
-    modalContent.className = "cloud-sync-modal";
-    modalContent.style.backgroundColor = "white";
+    modalContent.className = "privacy-checker-modal";
+    modalContent.style.backgroundColor = "#121212";
+    modalContent.style.color = "white";
     modalContent.style.borderRadius = "8px";
     modalContent.style.padding = "20px";
     modalContent.style.maxWidth = "600px";
     modalContent.style.width = "100%";
     modalContent.style.maxHeight = "80vh";
     modalContent.style.overflowY = "auto";
-
-    // Support dark mode
-    modalContent.classList.add("dark:bg-zinc-900");
+    modalContent.style.border = "1px solid #333";
+    modalContent.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.5)";
 
     // Add content to the modal
     modalContent.innerHTML = `
-      <div class="text-gray-800 dark:text-white text-left text-sm">
+      <div class="text-white text-left text-sm">
         <div class="flex justify-center items-center mb-3">
           <h3 class="text-center text-xl font-bold">Privacy Checker Settings</h3>
-          <button class="ml-2 text-blue-600 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
+          <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
         </div>
 
         <div class="space-y-3">
-          <div class="mt-4 bg-gray-100 dark:bg-zinc-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div class="mt-4 bg-zinc-800 px-3 py-2 rounded-lg border border-zinc-700">
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Enable Privacy Checker</label>
+              <label class="block text-sm font-medium text-gray-300">Enable Privacy Checker</label>
               <div class="relative inline-block w-10 mr-2 align-middle select-none">
                 <input type="checkbox" id="privacy-checker-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
                   config.enabled ? "checked" : ""
                 }>
-                <label for="privacy-checker-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                <label for="privacy-checker-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer"></label>
               </div>
             </div>
           </div>
 
-          <div class="mt-4 bg-gray-100 dark:bg-zinc-800 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600">
+          <div class="mt-4 bg-zinc-800 px-3 py-2 rounded-lg border border-zinc-700">
             <div class="flex items-center justify-between mb-1">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-400">Privacy Rules</label>
+              <label class="block text-sm font-medium text-gray-300">Privacy Rules</label>
               <button id="add-rule-btn" class="px-2 py-1 text-xs text-white bg-blue-600 rounded-md hover:bg-blue-700">
                 Add Rule
               </button>
@@ -380,10 +382,8 @@
       } else if (e.target.id === "privacy-checker-toggle") {
         togglePrivacyChecker();
       }
-    });
 
-    // Prevent click propagation from modal content to container
-    modalContent.addEventListener("click", (e) => {
+      // Prevent event propagation to avoid interfering with other modals
       e.stopPropagation();
     });
 
@@ -415,11 +415,14 @@
       populateRulesList();
 
       // Add click event to close when clicking outside
-      modalContainer.addEventListener("click", (e) => {
+      const closeOnOutsideClick = (e) => {
         if (e.target === modalContainer) {
           togglePrivacyModal();
+          modalContainer.removeEventListener("click", closeOnOutsideClick);
         }
-      });
+      };
+
+      modalContainer.addEventListener("click", closeOnOutsideClick);
     } else {
       // Hide modal
       modalContainer.style.display = "none";
@@ -437,7 +440,7 @@
     config.rules.forEach((rule) => {
       const ruleElement = document.createElement("div");
       ruleElement.className =
-        "rule-item bg-white dark:bg-zinc-700 p-2 rounded-md border border-gray-200 dark:border-gray-600";
+        "rule-item bg-zinc-700 p-2 rounded-md border border-zinc-600";
       ruleElement.dataset.ruleId = rule.id;
 
       ruleElement.innerHTML = `
@@ -446,17 +449,17 @@
             <input type="checkbox" class="rule-toggle mr-2" ${
               rule.active ? "checked" : ""
             }>
-            <span class="rule-name font-medium">${rule.name}</span>
+            <span class="rule-name font-medium text-white">${rule.name}</span>
           </div>
           <div class="flex space-x-2">
             <button class="edit-rule-btn px-2 py-0.5 text-xs text-white bg-blue-600 rounded-md hover:bg-blue-700">Edit</button>
             <button class="delete-rule-btn px-2 py-0.5 text-xs text-white bg-red-600 rounded-md hover:bg-red-700">Delete</button>
           </div>
         </div>
-        <div class="rule-details mt-1 text-xs text-gray-600 dark:text-gray-400">
+        <div class="rule-details mt-1 text-xs text-gray-300">
           Type: ${rule.type === "regex" ? "Regular Expression" : "String Match"}
           <br>
-          Pattern: <code>${rule.pattern}</code>
+          Pattern: <code class="bg-zinc-800 px-1 rounded">${rule.pattern}</code>
           ${
             rule.type === "string"
               ? `<br>Case Sensitive: ${rule.caseSensitive ? "Yes" : "No"}`
@@ -467,18 +470,21 @@
 
       // Add event listeners
       const toggleCheckbox = ruleElement.querySelector(".rule-toggle");
-      toggleCheckbox.addEventListener("change", () => {
+      toggleCheckbox.addEventListener("change", (e) => {
         toggleRule(rule.id, toggleCheckbox.checked);
+        e.stopPropagation();
       });
 
       const editButton = ruleElement.querySelector(".edit-rule-btn");
-      editButton.addEventListener("click", () => {
+      editButton.addEventListener("click", (e) => {
         editRule(rule.id);
+        e.stopPropagation();
       });
 
       const deleteButton = ruleElement.querySelector(".delete-rule-btn");
-      deleteButton.addEventListener("click", () => {
+      deleteButton.addEventListener("click", (e) => {
         deleteRule(rule.id);
+        e.stopPropagation();
       });
 
       rulesList.appendChild(ruleElement);
@@ -541,24 +547,26 @@
     // Create the editor content
     const editorContent = document.createElement("div");
     editorContent.className =
-      "rule-editor-content bg-white dark:bg-zinc-900 rounded-lg p-4 max-w-md w-full";
+      "rule-editor-content bg-zinc-900 rounded-lg p-4 max-w-md w-full";
+    editorContent.style.border = "1px solid #333";
+    editorContent.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.5)";
 
     editorContent.innerHTML = `
-      <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">${
+      <h3 class="text-lg font-bold mb-4 text-white">${
         existingRule ? "Edit Rule" : "Add New Rule"
       }</h3>
       
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rule Name</label>
-          <input type="text" id="rule-name-input" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-zinc-700 dark:border-gray-600 dark:text-white" value="${
+          <label class="block text-sm font-medium text-gray-300 mb-1">Rule Name</label>
+          <input type="text" id="rule-name-input" class="w-full px-3 py-2 border border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-zinc-800 text-white" value="${
             existingRule ? existingRule.name : ""
           }">
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rule Type</label>
-          <select id="rule-type-input" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-zinc-700 dark:border-gray-600 dark:text-white">
+          <label class="block text-sm font-medium text-gray-300 mb-1">Rule Type</label>
+          <select id="rule-type-input" class="w-full px-3 py-2 border border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-zinc-800 text-white">
             <option value="string" ${
               existingRule && existingRule.type === "string" ? "selected" : ""
             }>String Match</option>
@@ -569,8 +577,8 @@
         </div>
         
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pattern</label>
-          <input type="text" id="rule-pattern-input" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-zinc-700 dark:border-gray-600 dark:text-white" value="${
+          <label class="block text-sm font-medium text-gray-300 mb-1">Pattern</label>
+          <input type="text" id="rule-pattern-input" class="w-full px-3 py-2 border border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-zinc-800 text-white" value="${
             existingRule ? existingRule.pattern : ""
           }">
         </div>
@@ -588,12 +596,12 @@
                 ? "checked"
                 : ""
             }>
-            <span class="text-sm text-gray-700 dark:text-gray-300">Case Sensitive</span>
+            <span class="text-sm text-gray-300">Case Sensitive</span>
           </label>
         </div>
         
         <div class="flex justify-end space-x-2 pt-4">
-          <button id="cancel-rule-edit" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">Cancel</button>
+          <button id="cancel-rule-edit" class="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600">Cancel</button>
           <button id="save-rule-edit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save</button>
         </div>
       </div>
@@ -611,12 +619,13 @@
     });
 
     const cancelButton = editorContent.querySelector("#cancel-rule-edit");
-    cancelButton.addEventListener("click", () => {
+    cancelButton.addEventListener("click", (e) => {
       document.body.removeChild(editorOverlay);
+      e.stopPropagation();
     });
 
     const saveButton = editorContent.querySelector("#save-rule-edit");
-    saveButton.addEventListener("click", () => {
+    saveButton.addEventListener("click", (e) => {
       const nameInput = editorContent.querySelector("#rule-name-input");
       const patternInput = editorContent.querySelector("#rule-pattern-input");
       const caseSensitiveInput = editorContent.querySelector(
@@ -667,6 +676,7 @@
       checkForSensitiveInfo();
 
       document.body.removeChild(editorOverlay);
+      e.stopPropagation();
     });
 
     // Append to overlay
@@ -679,8 +689,9 @@
     });
 
     // Close on overlay click
-    editorOverlay.addEventListener("click", () => {
+    editorOverlay.addEventListener("click", (e) => {
       document.body.removeChild(editorOverlay);
+      e.stopPropagation();
     });
   }
 
@@ -710,12 +721,6 @@
         margin-top: 8px;
         font-size: 12px;
         max-width: 300px;
-      }
-      @media (prefers-color-scheme: dark) {
-        .cloud-sync-modal {
-          background-color: #1f2937;
-          color: white;
-        }
       }
     `;
     document.head.appendChild(styleElement);
