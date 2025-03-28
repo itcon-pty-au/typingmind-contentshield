@@ -419,7 +419,7 @@
     // Add content to the modal
     modalContent.innerHTML = `
       <div class="modal-header">
-        <h3 class="modal-title">Privacy Checker Settings</h3>
+        <h3 class="modal-title">Privacy Checker</h3>
         <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
       </div>
 
@@ -448,7 +448,7 @@
       <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
           <label class="modal-section-title">Appearance Settings</label>
-          <button id="toggle-style-settings" class="button button-secondary text-xs py-1">
+          <button id="toggle-style-settings" class="button button-primary text-xs py-1">
             <span id="toggle-style-text">Show</span> <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1" id="toggle-style-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
         </div>
@@ -505,7 +505,7 @@
       </div>
 
       <div class="button-group">
-        <button id="export-rules-btn" class="button button-secondary" title="Export your rules to share or backup">
+        <button id="export-rules-btn" class="button button-primary" title="Export your rules to share or backup">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="7 10 12 15 17 10"></polyline>
@@ -513,7 +513,7 @@
           </svg>
           Export
         </button>
-        <button id="import-rules-btn" class="button button-secondary" title="Import rules from another instance">
+        <button id="import-rules-btn" class="button button-primary" title="Import rules from another instance">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
@@ -606,6 +606,22 @@
 
       // Populate rules
       populateRulesList();
+
+      // Make sure the style settings content is hidden initially
+      const styleContent = document.getElementById("style-settings-content");
+      if (styleContent) {
+        styleContent.style.display = "none";
+      }
+
+      const toggleText = document.getElementById("toggle-style-text");
+      if (toggleText) {
+        toggleText.textContent = "Show";
+      }
+
+      const toggleIcon = document.getElementById("toggle-style-icon");
+      if (toggleIcon) {
+        toggleIcon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
+      }
 
       // Add click event to close when clicking outside
       const closeOnOutsideClick = (e) => {
