@@ -23,11 +23,11 @@
     },
     {
       "id": 4,
-      "type": "string",
-      "pattern": "password",
-      "name": "Password Reference",
+      "type": "regex",
+      "pattern": "\\b(?:password|pwd)\\s*[:=]\\s*['\"](?!\\*+)[^'\"]+['\"]",
+      "name": "Password Assignment",
       "active": true,
-      "caseSensitive": false
+      "description": "Matches password assignments that aren't masked (ignores values with just asterisks)"
     },
     {
       "id": 5,
