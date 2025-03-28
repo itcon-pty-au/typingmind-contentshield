@@ -295,15 +295,6 @@
     modalContainer = document.createElement("div");
     modalContainer.id = "privacy-checker-modal-container";
     modalContainer.style.display = "none";
-    modalContainer.style.position = "fixed";
-    modalContainer.style.top = "0";
-    modalContainer.style.left = "0";
-    modalContainer.style.right = "0";
-    modalContainer.style.bottom = "0";
-    modalContainer.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-    modalContainer.style.zIndex = "9999";
-    modalContainer.style.justifyContent = "center";
-    modalContainer.style.alignItems = "center";
 
     // Create the modal content
     const modalContent = createModalContent();
@@ -317,56 +308,38 @@
   function createModalContent() {
     const modalContent = document.createElement("div");
     modalContent.className = "privacy-checker-modal";
-    modalContent.style.backgroundColor = "#121212";
-    modalContent.style.color = "white";
-    modalContent.style.borderRadius = "8px";
-    modalContent.style.padding = "20px";
-    modalContent.style.maxWidth = "600px";
-    modalContent.style.width = "100%";
-    modalContent.style.maxHeight = "80vh";
-    modalContent.style.overflowY = "auto";
-    modalContent.style.border = "1px solid #333";
-    modalContent.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.5)";
 
     // Add content to the modal
     modalContent.innerHTML = `
-      <div class="text-white text-left text-sm">
-        <div class="flex justify-center items-center mb-3">
-          <h3 class="text-center text-xl font-bold">Privacy Checker Settings</h3>
-          <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
-        </div>
+      <div class="modal-header">
+        <h3 class="modal-title">Privacy Checker Settings</h3>
+        <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
+      </div>
 
-        <div class="space-y-3">
-          <div class="mt-4 bg-zinc-800 px-3 py-2 rounded-lg border border-zinc-700">
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-sm font-medium text-gray-300">Enable Privacy Checker</label>
-              <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                <input type="checkbox" id="privacy-checker-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
-                  config.enabled ? "checked" : ""
-                }>
-                <label for="privacy-checker-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer"></label>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-4 bg-zinc-800 px-3 py-2 rounded-lg border border-zinc-700">
-            <div class="flex items-center justify-between mb-1">
-              <label class="block text-sm font-medium text-gray-300">Privacy Rules</label>
-              <button id="add-rule-btn" class="px-2 py-1 text-xs text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                Add Rule
-              </button>
-            </div>
-            <div id="privacy-rules-list" class="space-y-2 max-h-[300px] overflow-y-auto">
-              <!-- Rules will be populated here -->
-            </div>
-          </div>
-
-          <div class="flex justify-end space-x-2 mt-4">
-            <button id="close-privacy-modal" class="z-1 inline-flex items-center px-2 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-              Close
-            </button>
+      <div class="modal-section">
+        <div class="flex items-center justify-between">
+          <label class="modal-section-title">Enable Privacy Checker</label>
+          <div class="relative inline-block w-10 mr-2 align-middle select-none">
+            <input type="checkbox" id="privacy-checker-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
+              config.enabled ? "checked" : ""
+            }>
+            <label for="privacy-checker-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer"></label>
           </div>
         </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="flex items-center justify-between mb-2">
+          <label class="modal-section-title">Privacy Rules</label>
+          <button id="add-rule-btn" class="button button-primary">Add Rule</button>
+        </div>
+        <div id="privacy-rules-list" class="space-y-2 max-h-[300px] overflow-y-auto">
+          <!-- Rules will be populated here -->
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="close-privacy-modal" class="button button-danger">Close</button>
       </div>
     `;
 
@@ -439,8 +412,7 @@
     // Add each rule
     config.rules.forEach((rule) => {
       const ruleElement = document.createElement("div");
-      ruleElement.className =
-        "rule-item bg-zinc-700 p-2 rounded-md border border-zinc-600";
+      ruleElement.className = "rule-item";
       ruleElement.dataset.ruleId = rule.id;
 
       ruleElement.innerHTML = `
@@ -452,14 +424,14 @@
             <span class="rule-name font-medium text-white">${rule.name}</span>
           </div>
           <div class="flex space-x-2">
-            <button class="edit-rule-btn px-2 py-0.5 text-xs text-white bg-blue-600 rounded-md hover:bg-blue-700">Edit</button>
-            <button class="delete-rule-btn px-2 py-0.5 text-xs text-white bg-red-600 rounded-md hover:bg-red-700">Delete</button>
+            <button class="edit-rule-btn button button-secondary py-0.5 px-2 text-xs">Edit</button>
+            <button class="delete-rule-btn button button-danger py-0.5 px-2 text-xs">Delete</button>
           </div>
         </div>
-        <div class="rule-details mt-1 text-xs text-gray-300">
+        <div class="rule-details">
           Type: ${rule.type === "regex" ? "Regular Expression" : "String Match"}
           <br>
-          Pattern: <code class="bg-zinc-800 px-1 rounded">${rule.pattern}</code>
+          Pattern: <code>${rule.pattern}</code>
           ${
             rule.type === "string"
               ? `<br>Case Sensitive: ${rule.caseSensitive ? "Yes" : "No"}`
@@ -538,35 +510,39 @@
     editorOverlay.style.left = "0";
     editorOverlay.style.right = "0";
     editorOverlay.style.bottom = "0";
-    editorOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
-    editorOverlay.style.zIndex = "10000";
+    editorOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.6)";
+    editorOverlay.style.backdropFilter = "blur(4px)";
+    editorOverlay.style.webkitBackdropFilter = "blur(4px)";
+    editorOverlay.style.zIndex = "100001";
     editorOverlay.style.display = "flex";
     editorOverlay.style.justifyContent = "center";
     editorOverlay.style.alignItems = "center";
+    editorOverlay.style.padding = "1rem";
+    editorOverlay.style.animation = "fadeIn 0.2s ease-out";
 
     // Create the editor content
     const editorContent = document.createElement("div");
-    editorContent.className =
-      "rule-editor-content bg-zinc-900 rounded-lg p-4 max-w-md w-full";
-    editorContent.style.border = "1px solid #333";
-    editorContent.style.boxShadow = "0 4px 10px rgba(0, 0, 0, 0.5)";
+    editorContent.className = "privacy-checker-modal"; // Reuse main modal styles
+    editorContent.style.animation = "slideIn 0.3s ease-out";
 
     editorContent.innerHTML = `
-      <h3 class="text-lg font-bold mb-4 text-white">${
-        existingRule ? "Edit Rule" : "Add New Rule"
-      }</h3>
+      <div class="modal-header">
+        <h3 class="modal-title">${
+          existingRule ? "Edit Rule" : "Add New Rule"
+        }</h3>
+      </div>
       
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Rule Name</label>
-          <input type="text" id="rule-name-input" class="w-full px-3 py-2 border border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-zinc-800 text-white" value="${
+      <div class="modal-section">
+        <div class="form-group">
+          <label for="rule-name-input">Rule Name</label>
+          <input type="text" id="rule-name-input" value="${
             existingRule ? existingRule.name : ""
           }">
         </div>
         
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Rule Type</label>
-          <select id="rule-type-input" class="w-full px-3 py-2 border border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-zinc-800 text-white">
+        <div class="form-group">
+          <label for="rule-type-input">Rule Type</label>
+          <select id="rule-type-input">
             <option value="string" ${
               existingRule && existingRule.type === "string" ? "selected" : ""
             }>String Match</option>
@@ -576,14 +552,14 @@
           </select>
         </div>
         
-        <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Pattern</label>
-          <input type="text" id="rule-pattern-input" class="w-full px-3 py-2 border border-zinc-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-zinc-800 text-white" value="${
+        <div class="form-group">
+          <label for="rule-pattern-input">Pattern</label>
+          <input type="text" id="rule-pattern-input" value="${
             existingRule ? existingRule.pattern : ""
           }">
         </div>
         
-        <div id="case-sensitive-container" ${
+        <div id="case-sensitive-container" class="form-group" ${
           existingRule && existingRule.type === "regex"
             ? 'style="display:none;"'
             : ""
@@ -596,14 +572,14 @@
                 ? "checked"
                 : ""
             }>
-            <span class="text-sm text-gray-300">Case Sensitive</span>
+            <span>Case Sensitive</span>
           </label>
         </div>
-        
-        <div class="flex justify-end space-x-2 pt-4">
-          <button id="cancel-rule-edit" class="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600">Cancel</button>
-          <button id="save-rule-edit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save</button>
-        </div>
+      </div>
+      
+      <div class="button-group">
+        <button id="cancel-rule-edit" class="button button-secondary">Cancel</button>
+        <button id="save-rule-edit" class="button button-primary">Save</button>
       </div>
     `;
 
@@ -721,6 +697,344 @@
         margin-top: 8px;
         font-size: 12px;
         max-width: 300px;
+      }
+
+      /* Modal styles */
+      #privacy-checker-modal-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow-y: auto;
+        animation: fadeIn 0.2s ease-out;
+      }
+
+      .privacy-checker-modal {
+        display: inline-block;
+        width: 100%;
+        background-color: rgb(9, 9, 11);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: left;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: translateY(0);
+        transition: all 0.3s ease-in-out;
+        max-width: 32rem;
+        overflow: hidden;
+        animation: slideIn 0.3s ease-out;
+        position: relative;
+        z-index: 100000;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* Tooltip styles */
+      [class*="hint--"] {
+        position: relative;
+        display: inline-block;
+      }
+
+      [class*="hint--"]::before,
+      [class*="hint--"]::after {
+        position: absolute;
+        transform: translate3d(0, 0, 0);
+        visibility: hidden;
+        opacity: 0;
+        z-index: 100000;
+        pointer-events: none;
+        transition: 0.3s ease;
+        transition-delay: 0ms;
+      }
+
+      [class*="hint--"]::before {
+        content: '';
+        position: absolute;
+        background: transparent;
+        border: 6px solid transparent;
+        z-index: 100000;
+      }
+
+      [class*="hint--"]::after {
+        content: attr(aria-label);
+        background: #383838;
+        color: white;
+        padding: 8px 10px;
+        font-size: 12px;
+        line-height: 16px;
+        white-space: pre-wrap;
+        box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+        max-width: 400px !important;
+        min-width: 200px !important;
+        width: auto !important;
+        border-radius: 4px;
+      }
+
+      /* Ensure specific tooltip classes don't override the width */
+      .hint--top::after,
+      .hint--top-right::after,
+      .hint--top-left::after,
+      .hint--bottom::after,
+      .hint--bottom-right::after,
+      .hint--bottom-left::after {
+        max-width: 400px !important;
+        min-width: 200px !important;
+        width: auto !important;
+      }
+
+      [class*="hint--"]:hover::before,
+      [class*="hint--"]:hover::after {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .hint--top::before {
+        border-top-color: #383838;
+        margin-bottom: -12px;
+      }
+
+      .hint--top::after {
+        margin-bottom: -6px;
+      }
+
+      .hint--top::before,
+      .hint--top::after {
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .hint--top-right::before {
+        border-top-color: #383838;
+        margin-bottom: -12px;
+      }
+
+      .hint--top-right::after {
+        margin-bottom: -6px;
+      }
+
+      .hint--top-right::before,
+      .hint--top-right::after {
+        bottom: 100%;
+        left: 0;
+      }
+
+      .hint--top-left::before {
+        border-top-color: #383838;
+        margin-bottom: -12px;
+      }
+
+      .hint--top-left::after {
+        margin-bottom: -6px;
+      }
+
+      .hint--top-left::before,
+      .hint--top-left::after {
+        bottom: 100%;
+        right: 0;
+      }
+
+      .hint--bottom::before {
+        border-bottom-color: #383838;
+        margin-top: -12px;
+      }
+
+      .hint--bottom::after {
+        margin-top: -6px;
+      }
+
+      .hint--bottom::before,
+      .hint--bottom::after {
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .hint--bottom-right::before {
+        border-bottom-color: #383838;
+        margin-top: -12px;
+      }
+
+      .hint--bottom-right::after {
+        margin-top: -6px;
+      }
+
+      .hint--bottom-right::before,
+      .hint--bottom-right::after {
+        top: 100%;
+        left: 0;
+      }
+
+      .hint--bottom-left::before {
+        border-bottom-color: #383838;
+        margin-top: -12px;
+      }
+
+      .hint--bottom-left::after {
+        margin-top: -6px;
+      }
+
+      .hint--bottom-left::before,
+      .hint--bottom-left::after {
+        top: 100%;
+        right: 0;
+      }
+
+      /* Animation keyframes */
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes slideIn {
+        from { 
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to { 
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .modal-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+        text-align: center;
+        color: white;
+      }
+
+      .modal-section {
+        margin-top: 1rem;
+        background-color: rgb(39, 39, 42);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid rgb(63, 63, 70);
+      }
+
+      .modal-section-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgb(161, 161, 170);
+        margin-bottom: 0.25rem;
+      }
+
+      .form-group {
+        margin-bottom: 0.75rem;
+      }
+
+      .form-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: rgb(161, 161, 170);
+        margin-bottom: 0.25rem;
+      }
+
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 0.375rem 0.5rem;
+        border: 1px solid rgb(63, 63, 70);
+        border-radius: 0.375rem;
+        background-color: rgb(39, 39, 42);
+        color: white;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        outline: none;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: rgb(59, 130, 246);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      }
+
+      .button-group {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .button-primary {
+        background-color: rgb(37, 99, 235);
+        color: white;
+      }
+
+      .button-primary:hover {
+        background-color: rgb(29, 78, 216);
+      }
+
+      .button-secondary {
+        background-color: rgb(82, 82, 91);
+        color: white;
+      }
+
+      .button-secondary:hover {
+        background-color: rgb(63, 63, 70);
+      }
+
+      .button-danger {
+        background-color: rgb(220, 38, 38);
+        color: white;
+      }
+
+      .button-danger:hover {
+        background-color: rgb(185, 28, 28);
+      }
+
+      .button:disabled {
+        background-color: rgb(82, 82, 91);
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      .rule-item {
+        background-color: rgb(39, 39, 42);
+        border: 1px solid rgb(63, 63, 70);
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .rule-details {
+        color: rgb(161, 161, 170);
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+      }
+
+      .rule-details code {
+        background-color: rgb(24, 24, 27);
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
       }
     `;
     document.head.appendChild(styleElement);
