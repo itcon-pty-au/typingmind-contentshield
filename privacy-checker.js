@@ -581,10 +581,10 @@
             <label>Menu & Keyboard Controls</label>
             <div class="space-y-2">
               <div class="flex items-center">
-                <input type="checkbox" id="show-menu-btn" class="mr-2" ${
-                  config.menuButton.show ? "checked" : ""
+                <input type="checkbox" id="hide-menu-btn" class="mr-2" ${
+                  !config.menuButton.show ? "checked" : ""
                 }>
-                <label for="show-menu-btn" class="text-sm">Show Menu Button</label>
+                <label for="hide-menu-btn" class="text-sm">Hide extension from menu</label>
               </div>
               
               <div class="flex items-center">
@@ -599,8 +599,8 @@
                   </button>
                 </div>
               </div>
-              <p class="text-xs text-gray-400">Press the Record button and type your desired shortcut (e.g., Alt+P)</p>
-              <div id="shortcut-error" class="text-red-500 text-xs hidden">A keyboard shortcut is required when menu button is hidden</div>
+              <p class="text-xs text-gray-400">Press the Record button and type your desired shortcut (e.g., Shift+Alt+P)</p>
+              <div id="shortcut-error" class="text-red-500 text-xs hidden">A keyboard shortcut is required when extension is hidden from menu</div>
             </div>
           </div>
           
@@ -707,9 +707,9 @@
         applyStyleChanges();
       } else if (e.target.id === "border-width-input") {
         applyStyleChanges();
-      } else if (e.target.id === "show-menu-btn") {
+      } else if (e.target.id === "hide-menu-btn") {
         // Toggle menu placement section opacity and disabled state
-        const showMenu = e.target.checked;
+        const hideMenu = e.target.checked;
         const placementSection = document.querySelector(
           ".menu-placement-section"
         );
@@ -721,21 +721,21 @@
         const shortcutError = document.getElementById("shortcut-error");
 
         if (placementSection) {
-          placementSection.style.opacity = showMenu ? "1" : "0.5";
-          placementPosition.disabled = !showMenu;
-          placementReference.disabled = !showMenu;
+          placementSection.style.opacity = !hideMenu ? "1" : "0.5";
+          placementPosition.disabled = hideMenu;
+          placementReference.disabled = hideMenu;
         }
 
         // Show error if menu button is hidden and no shortcut is provided
         if (
-          !showMenu &&
+          hideMenu &&
           (!shortcutInput.value || shortcutInput.value.trim() === "")
         ) {
           shortcutError.classList.remove("hidden");
           shortcutInput.setAttribute("required", "required");
         } else {
           shortcutError.classList.add("hidden");
-          if (showMenu) shortcutInput.removeAttribute("required");
+          if (!hideMenu) shortcutInput.removeAttribute("required");
         }
       }
     });
@@ -1202,12 +1202,12 @@
     const placementReference = document.getElementById(
       "placement-reference"
     ).value;
-    const showMenuButton = document.getElementById("show-menu-btn").checked;
+    const hideMenuButton = document.getElementById("hide-menu-btn").checked;
     const keyboardShortcut = document.getElementById("keyboard-shortcut").value;
 
     // Validate: if menu button is hidden, shortcut is required
     if (
-      !showMenuButton &&
+      hideMenuButton &&
       (!keyboardShortcut || keyboardShortcut.trim() === "")
     ) {
       document.getElementById("shortcut-error").classList.remove("hidden");
@@ -1229,10 +1229,10 @@
 
     // Save menu button settings
     const menuButtonChanged =
-      config.menuButton.show !== showMenuButton ||
+      config.menuButton.show !== !hideMenuButton ||
       config.menuButton.shortcut !== keyboardShortcut;
 
-    config.menuButton.show = showMenuButton;
+    config.menuButton.show = !hideMenuButton;
     config.menuButton.shortcut = keyboardShortcut;
 
     saveConfig();
@@ -1248,7 +1248,7 @@
       setupKeyboardShortcut();
 
       // Add or remove menu button
-      if (showMenuButton) {
+      if (!hideMenuButton) {
         if (!privacyButton || !privacyButton.parentNode) {
           setupPrivacyButton();
         } else if (placementChanged) {
@@ -1260,7 +1260,7 @@
         privacyButton.parentNode.removeChild(privacyButton);
         privacyButton = null;
       }
-    } else if (placementChanged && showMenuButton) {
+    } else if (placementChanged && !hideMenuButton) {
       // Reposition button if placement changed and button is visible
       setupPrivacyButton();
     }
@@ -1450,10 +1450,10 @@
       shortcutInput.value = parts.join("+");
 
       // Hide error if value is provided and menu button is hidden
-      const showMenu = document.getElementById("show-menu-btn").checked;
+      const hideMenu = document.getElementById("hide-menu-btn").checked;
       const shortcutError = document.getElementById("shortcut-error");
 
-      if (!showMenu && shortcutInput.value.trim() !== "") {
+      if (hideMenu && shortcutInput.value.trim() !== "") {
         shortcutError.classList.add("hidden");
       }
     }

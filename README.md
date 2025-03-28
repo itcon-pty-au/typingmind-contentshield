@@ -23,6 +23,9 @@
   - Highlight color for detected content
   - Border width options
   - Warning header color
+  - Menu button visibility toggle
+  - Customizable keyboard shortcut (default: Shift+Alt+P)
+  - Menu icon placement options
 - Import/export functionality to share rule sets with others
 - Local storage of configurations with reasonable defaults
 - Non-intrusive UI that integrates seamlessly with the TypingMind interface
@@ -36,6 +39,7 @@
    - Manage privacy rules
    - Customize appearance settings
    - Import/export rule configurations
+4. Alternatively, you can use the keyboard shortcut (default: Shift+Alt+P) to open the configuration panel.
 
 ## Default Rules
 
@@ -83,7 +87,19 @@ Toggle the checkbox next to any rule to enable or disable it without deleting it
    - Highlight Color - The color used to highlight sensitive content
    - Border Width - Choose from Thin (1px) to Very Thick (4px)
    - Warning Header Color - The background color for the warning header
+   - Menu & Keyboard Controls:
+     - Hide extension from menu - Option to remove the Privacy button from the sidebar
+     - Keyboard Shortcut - Set a custom keyboard combination to open the panel (required if extension is hidden from menu)
+   - Menu Icon Placement - Choose where to position the Privacy button in the sidebar (before or after other menu items)
 4. Click "Save Styles" to apply changes
+
+## Setting Keyboard Shortcuts
+
+1. Open the Privacy configuration panel and go to Appearance settings
+2. In the Menu & Keyboard Controls section, click the "Record" button next to the shortcut input
+3. Press your desired key combination (e.g., Shift+Alt+P)
+4. The shortcut will be recorded and displayed in the input field
+5. Click "Save Styles" to apply the new shortcut
 
 ## Importing and Exporting Rules
 
