@@ -12,6 +12,12 @@
         pattern: "\\b(?:\\d[ -]*?){13,16}\\b",
         name: "Credit Card Number",
         active: true,
+        masking: {
+          enabled: true,
+          mode: "direct_text",
+          pattern: "*",
+          preserveFormat: true,
+        },
       },
       {
         id: 2,
@@ -19,6 +25,13 @@
         pattern: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
         name: "Email Address",
         active: true,
+        masking: {
+          enabled: true,
+          mode: "direct_text",
+          pattern: "*",
+          preserveStart: 1,
+          preserveEnd: 0,
+        },
       },
       {
         id: 3,
@@ -26,14 +39,25 @@
         pattern: "\\b(?:\\d{3}[-.]?){2}\\d{4}\\b",
         name: "SSN",
         active: true,
+        masking: {
+          enabled: true,
+          mode: "direct_text",
+          pattern: "*",
+          preserveEnd: 4,
+        },
       },
       {
         id: 4,
-        type: "string",
-        pattern: "password",
-        name: "Password Reference",
+        type: "variable",
+        pattern: "(password|secret|key|token)\\s*=\\s*[\"']([^\"']+)[\"']",
+        name: "Secret Variable",
         active: true,
-        caseSensitive: false,
+        masking: {
+          enabled: true,
+          mode: "variable_value",
+          pattern: "*",
+          fixedLength: 3,
+        },
       },
       {
         id: 5,
@@ -42,6 +66,12 @@
         name: "Confidential Reference",
         active: true,
         caseSensitive: false,
+        masking: {
+          enabled: true,
+          mode: "direct_text",
+          pattern: "*",
+          preserveLength: true,
+        },
       },
       {
         id: 6,
@@ -50,6 +80,12 @@
         name: "Secret Reference",
         active: true,
         caseSensitive: false,
+        masking: {
+          enabled: true,
+          mode: "direct_text",
+          pattern: "*",
+          preserveLength: true,
+        },
       },
     ],
     nextRuleId: 7,
@@ -262,13 +298,14 @@
 
     const text = chatInputElement.value;
     const activeMatches = [];
+    let maskedText = text;
 
     // Check each active rule
     config.rules.forEach((rule) => {
       if (!rule.active) return;
 
       let matches = [];
-      if (rule.type === "regex") {
+      if (rule.type === "regex" || rule.type === "variable") {
         try {
           const regex = new RegExp(rule.pattern, "g");
           let match;
@@ -278,7 +315,19 @@
               ruleId: rule.id,
               matchedText: match[0],
               index: match.index,
+              length: match[0].length,
+              maskedText: rule.masking?.enabled
+                ? maskText(match[0], rule)
+                : match[0],
             });
+
+            // Apply masking if enabled
+            if (rule.masking?.enabled) {
+              maskedText =
+                maskedText.substring(0, match.index) +
+                maskText(match[0], rule) +
+                maskedText.substring(match.index + match[0].length);
+            }
           }
         } catch (e) {
           console.error(`Invalid regex pattern in rule ${rule.name}:`, e);
@@ -292,18 +341,38 @@
         // Use indexOf to find all occurrences
         let index = searchText.indexOf(searchPattern);
         while (index !== -1) {
+          const matchedText = text.substring(
+            index,
+            index + rule.pattern.length
+          );
           matches.push({
             ruleName: rule.name,
             ruleId: rule.id,
-            matchedText: text.substring(index, index + rule.pattern.length),
+            matchedText: matchedText,
             index: index,
+            length: rule.pattern.length,
+            maskedText: rule.masking?.enabled
+              ? maskText(matchedText, rule)
+              : matchedText,
           });
+
+          // Apply masking if enabled
+          if (rule.masking?.enabled) {
+            maskedText =
+              maskedText.substring(0, index) +
+              maskText(matchedText, rule) +
+              maskedText.substring(index + rule.pattern.length);
+          }
+
           index = searchText.indexOf(searchPattern, index + 1);
         }
       }
 
       activeMatches.push(...matches);
     });
+
+    // Sort matches by index to handle overlapping matches
+    activeMatches.sort((a, b) => a.index - b.index);
 
     // Update UI based on matches
     updateChatInputStyle(activeMatches.length > 0);
@@ -315,6 +384,13 @@
       if (document.getElementById("privacy-warning-tooltip")) {
         showPrivacyWarning();
       }
+    }
+
+    // Update the input value with masked text if there are matches
+    if (activeMatches.length > 0 && maskedText !== text) {
+      const cursorPosition = chatInputElement.selectionStart;
+      chatInputElement.value = maskedText;
+      chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
     }
   }
 
@@ -341,8 +417,16 @@
     if (!chatInputElement) return;
 
     if (hasSensitiveInfo) {
-      chatInputElement.style.border = `${config.styles.borderWidth} solid ${config.styles.highlightColor}`;
-      chatInputElement.style.boxShadow = `0 0 5px ${config.styles.highlightColor}`;
+      // Check if any active matches have masking enabled
+      const hasMaskedMatches = lastActiveMatches.some(
+        (match) => match.maskedText !== match.matchedText
+      );
+      const borderColor = hasMaskedMatches
+        ? "#22c55e"
+        : config.styles.highlightColor;
+
+      chatInputElement.style.border = `${config.styles.borderWidth} solid ${borderColor}`;
+      chatInputElement.style.boxShadow = `0 0 5px ${borderColor}`;
 
       // Show tooltip with warning
       showPrivacyWarning();
@@ -414,12 +498,16 @@
         hasMatches = true;
         // Safely escape HTML to prevent XSS
         const safeText = match.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeMaskedText = match.maskedText
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
         tableRowsHTML += `
           <tr class="privacy-warning-row">
             <td class="privacy-warning-cell">${index === 0 ? ruleName : ""}</td>
             <td class="privacy-warning-cell"><code style="background-color: rgba(${hexToRgb(
               config.styles.highlightColor
             )}, 0.3);">${safeText}</code></td>
+            <td class="privacy-warning-cell"><code>${safeMaskedText}</code></td>
             <td class="privacy-warning-cell">${match.position}</td>
           </tr>
         `;
@@ -433,7 +521,8 @@
           <thead>
             <tr class="privacy-warning-header-row">
               <th class="privacy-warning-header-cell">Rule Name</th>
-              <th class="privacy-warning-header-cell">Text</th>
+              <th class="privacy-warning-header-cell">Original Text</th>
+              <th class="privacy-warning-header-cell">Masked Text</th>
               <th class="privacy-warning-header-cell">Position</th>
             </tr>
           </thead>
@@ -464,6 +553,60 @@
     const b = parseInt(hex.substring(4, 6), 16);
 
     return `${r}, ${g}, ${b}`;
+  }
+
+  // Masking utility functions
+  function maskText(text, rule) {
+    if (!rule.masking || !rule.masking.enabled) {
+      return text;
+    }
+
+    const maskChar = rule.masking.pattern || "*";
+
+    if (rule.masking.mode === "variable_value") {
+      return maskVariableValue(text, rule);
+    } else {
+      return maskDirectText(text, rule);
+    }
+  }
+
+  function maskVariableValue(text, rule) {
+    return text.replace(
+      new RegExp(rule.pattern),
+      (match, varName, value, offset, string) => {
+        const quotes = match.match(/["']/)[0];
+        const maskedValue = "*".repeat(rule.masking.fixedLength || 3);
+        return `${varName} = ${quotes}${maskedValue}${quotes}`;
+      }
+    );
+  }
+
+  function maskDirectText(text, rule) {
+    if (rule.masking.preserveFormat) {
+      // Preserve formatting (spaces, special characters)
+      return text.replace(/\S/g, rule.masking.pattern || "*");
+    }
+
+    let maskedText = text;
+    const start = rule.masking.preserveStart || 0;
+    const end = rule.masking.preserveEnd || 0;
+
+    if (start > 0 || end > 0) {
+      const textLength = text.length;
+      const prefix = start > 0 ? text.substring(0, start) : "";
+      const suffix = end > 0 ? text.substring(textLength - end) : "";
+      const maskLength = textLength - start - end;
+      const maskedPart = (rule.masking.pattern || "*").repeat(
+        rule.masking.preserveLength ? maskLength : 3
+      );
+      maskedText = prefix + maskedPart + suffix;
+    } else if (rule.masking.preserveLength) {
+      maskedText = (rule.masking.pattern || "*").repeat(text.length);
+    } else {
+      maskedText = (rule.masking.pattern || "*").repeat(3);
+    }
+
+    return maskedText;
   }
 
   // Hide privacy warning tooltip
@@ -979,6 +1122,9 @@
             <option value="regex" ${
               existingRule && existingRule.type === "regex" ? "selected" : ""
             }>Regular Expression</option>
+            <option value="variable" ${
+              existingRule && existingRule.type === "variable" ? "selected" : ""
+            }>Variable Assignment</option>
           </select>
         </div>
         
@@ -990,7 +1136,7 @@
         </div>
         
         <div id="case-sensitive-container" class="form-group" ${
-          existingRule && existingRule.type === "regex"
+          existingRule && existingRule.type !== "string"
             ? 'style="display:none;"'
             : ""
         }>
@@ -1004,6 +1150,93 @@
             }>
             <span>Case Sensitive</span>
           </label>
+        </div>
+
+        <div class="form-group">
+          <label class="flex items-center mb-2">
+            <input type="checkbox" id="masking-enabled" class="mr-2" ${
+              existingRule?.masking?.enabled ? "checked" : ""
+            }>
+            <span>Enable Masking</span>
+          </label>
+
+          <div id="masking-options" class="pl-4 space-y-3" ${
+            existingRule?.masking?.enabled ? "" : 'style="display:none;"'
+          }>
+            <div class="form-group">
+              <label for="masking-mode">Masking Mode</label>
+              <select id="masking-mode" class="w-full">
+                <option value="direct_text" ${
+                  existingRule?.masking?.mode === "direct_text"
+                    ? "selected"
+                    : ""
+                }>Mask Entire Text</option>
+                <option value="variable_value" ${
+                  existingRule?.masking?.mode === "variable_value"
+                    ? "selected"
+                    : ""
+                }>Mask Variable Value</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="masking-pattern">Masking Character</label>
+              <input type="text" id="masking-pattern" maxlength="1" value="${
+                existingRule?.masking?.pattern || "*"
+              }" class="w-full">
+            </div>
+
+            <div id="direct-text-options" class="space-y-3" ${
+              existingRule?.masking?.mode === "variable_value"
+                ? 'style="display:none;"'
+                : ""
+            }>
+              <div class="form-group">
+                <label class="flex items-center">
+                  <input type="checkbox" id="preserve-length" class="mr-2" ${
+                    existingRule?.masking?.preserveLength ? "checked" : ""
+                  }>
+                  <span>Preserve Original Length</span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label class="flex items-center">
+                  <input type="checkbox" id="preserve-format" class="mr-2" ${
+                    existingRule?.masking?.preserveFormat ? "checked" : ""
+                  }>
+                  <span>Preserve Format (spaces, special characters)</span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label for="preserve-start">Characters to Preserve at Start</label>
+                <input type="number" id="preserve-start" min="0" value="${
+                  existingRule?.masking?.preserveStart || 0
+                }" class="w-full">
+              </div>
+
+              <div class="form-group">
+                <label for="preserve-end">Characters to Preserve at End</label>
+                <input type="number" id="preserve-end" min="0" value="${
+                  existingRule?.masking?.preserveEnd || 0
+                }" class="w-full">
+              </div>
+            </div>
+
+            <div id="variable-value-options" class="space-y-3" ${
+              existingRule?.masking?.mode !== "variable_value"
+                ? 'style="display:none;"'
+                : ""
+            }>
+              <div class="form-group">
+                <label for="fixed-length">Fixed Mask Length</label>
+                <input type="number" id="fixed-length" min="1" value="${
+                  existingRule?.masking?.fixedLength || 3
+                }" class="w-full">
+              </div>
+            </div>
+          </div>
         </div>
         
         <div id="regex-validation-message" class="validation-message" style="display: none; color: #f87171; font-size: 12px; margin-top: 6px;"></div>
@@ -1024,10 +1257,43 @@
     const validationMessage = editorContent.querySelector(
       "#regex-validation-message"
     );
+    const maskingEnabled = editorContent.querySelector("#masking-enabled");
+    const maskingOptions = editorContent.querySelector("#masking-options");
+    const maskingMode = editorContent.querySelector("#masking-mode");
+    const directTextOptions = editorContent.querySelector(
+      "#direct-text-options"
+    );
+    const variableValueOptions = editorContent.querySelector(
+      "#variable-value-options"
+    );
+
+    // Add masking-related event listeners
+    maskingEnabled.addEventListener("change", () => {
+      maskingOptions.style.display = maskingEnabled.checked ? "block" : "none";
+    });
+
+    maskingMode.addEventListener("change", () => {
+      const isVariableValue = maskingMode.value === "variable_value";
+      directTextOptions.style.display = isVariableValue ? "none" : "block";
+      variableValueOptions.style.display = isVariableValue ? "block" : "none";
+
+      // If switching to variable value mode, also switch rule type
+      if (isVariableValue) {
+        ruleTypeInput.value = "variable";
+        caseSensitiveContainer.style.display = "none";
+      }
+    });
 
     ruleTypeInput.addEventListener("change", () => {
       caseSensitiveContainer.style.display =
         ruleTypeInput.value === "string" ? "block" : "none";
+
+      // If switching to variable type, update masking mode
+      if (ruleTypeInput.value === "variable") {
+        maskingMode.value = "variable_value";
+        directTextOptions.style.display = "none";
+        variableValueOptions.style.display = "block";
+      }
 
       // Clear validation message when switching types
       validationMessage.style.display = "none";
@@ -1090,6 +1356,37 @@
         return; // Don't save if regex is invalid
       }
 
+      // Build masking configuration
+      const masking = maskingEnabled.checked
+        ? {
+            enabled: true,
+            mode: maskingMode.value,
+            pattern:
+              editorContent.querySelector("#masking-pattern").value || "*",
+            ...(maskingMode.value === "direct_text"
+              ? {
+                  preserveLength:
+                    editorContent.querySelector("#preserve-length").checked,
+                  preserveFormat:
+                    editorContent.querySelector("#preserve-format").checked,
+                  preserveStart: parseInt(
+                    editorContent.querySelector("#preserve-start").value || "0",
+                    10
+                  ),
+                  preserveEnd: parseInt(
+                    editorContent.querySelector("#preserve-end").value || "0",
+                    10
+                  ),
+                }
+              : {
+                  fixedLength: parseInt(
+                    editorContent.querySelector("#fixed-length").value || "3",
+                    10
+                  ),
+                }),
+          }
+        : { enabled: false };
+
       if (existingRule) {
         // Update existing rule
         const ruleIndex = config.rules.findIndex(
@@ -1102,6 +1399,7 @@
             type,
             pattern,
             ...(type === "string" ? { caseSensitive } : {}),
+            masking,
           };
         }
       } else {
@@ -1113,6 +1411,7 @@
           pattern,
           active: true,
           ...(type === "string" ? { caseSensitive } : {}),
+          masking,
         });
       }
 
