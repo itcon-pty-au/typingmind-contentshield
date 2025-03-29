@@ -20,17 +20,12 @@
   - Position of the detected content (line and character)
   - Interactive position markers for quick navigation
 - Built-in default rules for common sensitive data types:
-  - Credit Card Numbers (including specific formats for Visa, Mastercard, AmEx)
+  - Credit Card Numbers (with flexible format matching)
   - Email Addresses
   - Social Security Numbers (SSN)
-  - API Keys and Access Tokens
-  - Database Connection Strings
-  - Password Variables
-  - Encryption Keys
-  - Session Secrets
-  - OAuth Client Credentials
-  - Bearer Tokens
-  - Cloud Service Credentials
+  - Secret Variable Assignments (password, secret, key, token)
+  - Confidential References
+  - Secret References
 - Complete rule management system:
   - Add, edit, delete individual rules
   - Bulk delete all rules with confirmation
@@ -58,6 +53,41 @@
    - Customize appearance settings
    - Import/export rule configurations
 4. Alternatively, you can use the keyboard shortcut (default: Shift+Alt+P) to open the configuration panel.
+
+## Default Rules
+
+The extension comes with six predefined rules to detect common types of sensitive information:
+
+1. **Credit Card Number** (Regular Expression)
+
+   - Detects sequences of 13-16 digits with optional spaces or dashes
+   - Pattern: `\b(?:\d[ -]*?){13,16}\b`
+
+2. **Email Address** (Regular Expression)
+
+   - Detects standard email address formats
+   - Pattern: `\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b`
+
+3. **SSN** (Regular Expression)
+
+   - Detects Social Security Number patterns (xxx-xx-xxxx format)
+   - Pattern: `\b(?:\d{3}[-.]?){2}\d{4}\b`
+   - Supports optional dots or dashes as separators
+
+4. **Secret Variable** (Variable Assignment)
+
+   - Detects assignments to sensitive variables
+   - Pattern: `(password|secret|key|token)\s*=\s*["']([^"']+)["']`
+   - Matches variable names containing: password, secret, key, token
+
+5. **Confidential Reference** (String Match)
+
+   - Simple case-insensitive match for "confidential"
+   - Non-regex, exact text match
+
+6. **Secret Reference** (String Match)
+   - Simple case-insensitive match for "secret"
+   - Non-regex, exact text match
 
 ## Managing Rules
 
