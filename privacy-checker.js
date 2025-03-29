@@ -422,11 +422,11 @@
     if (!chatInputElement) return;
 
     if (hasSensitiveInfo) {
-      // Check if any active matches have masking enabled
-      const hasMaskedMatches = lastActiveMatches.some(
+      // Check if ALL active matches have masking enabled
+      const allMatchesMasked = lastActiveMatches.every(
         (match) => match.maskedText !== match.matchedText
       );
-      const borderColor = hasMaskedMatches
+      const borderColor = allMatchesMasked
         ? "#22c55e"
         : config.styles.highlightColor;
 
