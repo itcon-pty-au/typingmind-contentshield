@@ -246,6 +246,12 @@
         `menu-item-${order}`;
       console.log("Processing button:", id);
 
+      // Skip our own Shield button
+      if (id === "workspace-tab-shield") {
+        console.log("Skipping Shield button");
+        continue;
+      }
+
       // Stop scanning after Settings button
       if (id === "workspace-tab-settings") {
         // Include Settings button
