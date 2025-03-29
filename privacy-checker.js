@@ -675,7 +675,9 @@
 
       <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
-          <label class="modal-section-title">Privacy Rules</label>
+          <label class="modal-section-title">Privacy Rules (${
+            config.rules.length
+          })</label>
           <div class="flex space-x-2">
             <button id="delete-all-rules-btn" class="button button-danger" title="Delete all privacy rules">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
@@ -1004,6 +1006,12 @@
 
     // Clear existing rules
     rulesList.innerHTML = "";
+
+    // Update the rules count in the title
+    const rulesTitle = document.querySelector(".modal-section-title");
+    if (rulesTitle) {
+      rulesTitle.textContent = `Privacy Rules (${config.rules.length})`;
+    }
 
     // Add each rule
     config.rules.forEach((rule) => {
