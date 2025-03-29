@@ -675,7 +675,7 @@
 
       <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
-          <label class="modal-section-title">Privacy Rules (${
+          <label id="privacy-rules-title" class="modal-section-title">Privacy Rules (${
             config.rules.length
           })</label>
           <div class="flex space-x-2">
@@ -1008,7 +1008,7 @@
     rulesList.innerHTML = "";
 
     // Update the rules count in the title
-    const rulesTitle = document.querySelector(".modal-section-title");
+    const rulesTitle = document.querySelector("#privacy-rules-title");
     if (rulesTitle) {
       rulesTitle.textContent = `Privacy Rules (${config.rules.length})`;
     }
@@ -2371,7 +2371,7 @@
       }
 
       // Show success message
-      const rulesSection = document.querySelector(".modal-section-title");
+      const rulesSection = document.querySelector("#privacy-rules-title");
       const successMessage = document.createElement("div");
       successMessage.className = "text-green-500 text-sm ml-2 inline-block";
       successMessage.textContent = "All rules deleted";
