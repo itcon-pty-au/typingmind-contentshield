@@ -223,7 +223,7 @@
     const menuBar = document.querySelector('[data-element-id="workspace-bar"]');
     if (!menuBar) {
       // Try again in a second if menu bar isn't loaded yet
-      console.log("Menu bar not found, retrying in 1 second...");
+      //console.log("Menu bar not found, retrying in 1 second...");
       setTimeout(scanMenuItems, 1000);
       return;
     }
@@ -236,7 +236,7 @@
     let foundSettings = false;
     let order = 0;
 
-    console.log("Found buttons:", buttons.length);
+    //console.log("Found buttons:", buttons.length);
 
     // Store each button's id and label text up to Settings button
     for (const button of buttons) {
@@ -244,11 +244,11 @@
         button.getAttribute("data-element-id") ||
         button.id ||
         `menu-item-${order}`;
-      console.log("Processing button:", id);
+      //console.log("Processing button:", id);
 
       // Skip our own Shield button
       if (id === "workspace-tab-shield") {
-        console.log("Skipping Shield button");
+        //console.log("Skipping Shield button");
         continue;
       }
 
@@ -267,7 +267,7 @@
           order: order,
         };
         foundSettings = true;
-        console.log("Found Settings button, stopping scan");
+        //console.log("Found Settings button, stopping scan");
         break;
       }
 
@@ -290,8 +290,8 @@
       console.warn("Settings button not found in menu bar");
     }
 
-    console.log("Menu items found:", Object.keys(menuItems).length);
-    console.log("Menu items:", menuItems);
+    //console.log("Menu items found:", Object.keys(menuItems).length);
+    //console.log("Menu items:", menuItems);
 
     // Refresh the placement dropdown if it exists
     const placementDropdown = document.getElementById("placement-reference");
