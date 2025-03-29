@@ -529,6 +529,24 @@
             )}, 0.3);">${safeText}</code></td>
             <td class="privacy-warning-cell"><code>${safeMaskedText}</code></td>
             <td class="privacy-warning-cell">${match.position}</td>
+            <td class="privacy-warning-cell">
+              ${
+                match.maskedText !== match.text
+                  ? `
+                <button class="undo-masking-btn icon-button" 
+                  data-index="${match.index}" 
+                  data-length="${match.text.length}" 
+                  data-original="${safeText}"
+                  title="Undo masking">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7v6h6"></path>
+                    <path d="M3 13c0-4.97 4.03-9 9-9a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-6-2.3"></path>
+                  </svg>
+                </button>
+              `
+                  : ""
+              }
+            </td>
           </tr>
         `;
       });
@@ -544,6 +562,7 @@
               <th class="privacy-warning-header-cell">Original Text</th>
               <th class="privacy-warning-header-cell">Masked Text</th>
               <th class="privacy-warning-header-cell">Position</th>
+              <th class="privacy-warning-header-cell">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -560,6 +579,36 @@
 
     // Update the DOM with new content
     warningElement.innerHTML = headerHTML + contentHTML;
+
+    // Add click handlers for undo buttons
+    const undoButtons = warningElement.querySelectorAll(".undo-masking-btn");
+    undoButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const index = parseInt(button.dataset.index);
+        const length = parseInt(button.dataset.length);
+        const originalText = button.dataset.original;
+
+        // Get the current text and cursor position
+        const currentText = chatInputElement.value;
+        const cursorPosition = chatInputElement.selectionStart;
+
+        // Replace the masked text with original text
+        const newText =
+          currentText.substring(0, index) +
+          originalText +
+          currentText.substring(index + length);
+
+        // Update the input
+        chatInputElement.value = newText;
+
+        // Restore cursor position
+        chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
+
+        // Re-check for sensitive info to update UI
+        checkForSensitiveInfo();
+      });
+    });
   }
 
   // Helper function to convert hex to RGB
@@ -2049,6 +2098,24 @@
       .privacy-warning-cell code {
         padding: 2px 4px;
         border-radius: 3px;
+      }
+
+      .privacy-warning-cell .undo-masking-btn {
+        opacity: 0.7;
+        color: #60a5fa;
+        padding: 2px;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .privacy-warning-cell .undo-masking-btn:hover {
+        opacity: 1;
+        background-color: rgba(96, 165, 250, 0.1);
+      }
+
+      .privacy-warning-cell .undo-masking-btn svg {
+        vertical-align: middle;
       }
 
       .privacy-warning-no-matches {
