@@ -526,20 +526,25 @@
         chatInputElement.focus();
         chatInputElement.setSelectionRange(index, index + length);
 
-        // Create a temporary range to get the text node
-        const range = document.createRange();
-        range.setStart(chatInputElement.firstChild || chatInputElement, index);
-        range.setEnd(
-          chatInputElement.firstChild || chatInputElement,
-          index + length
-        );
+        // Get the text content up to the selection start
+        const textBeforeSelection = chatInputElement.value.substring(0, index);
+        const lines = textBeforeSelection.split("\n");
 
-        // Scroll the selected text into view with smooth behavior
-        range.getBoundingClientRect().toJSON(); // Force layout calculation
-        range.startContainer.parentElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+        // Calculate the line height (approximately)
+        const computedStyle = window.getComputedStyle(chatInputElement);
+        const lineHeight =
+          parseInt(computedStyle.lineHeight) ||
+          parseInt(computedStyle.fontSize) * 1.2;
+
+        // Calculate the scroll position
+        const targetLine = lines.length - 1;
+        const scrollPosition = targetLine * lineHeight;
+
+        // Scroll to the position with some padding
+        chatInputElement.scrollTop = Math.max(
+          0,
+          scrollPosition - lineHeight * 2
+        );
       });
     });
   }
