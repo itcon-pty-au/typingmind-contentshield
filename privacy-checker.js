@@ -111,6 +111,7 @@
   let rulesList = null;
   let lastActiveMatches = [];
   let menuItems = {};
+  let ignoredRegions = [];
 
   // Initialize the extension
   function init() {
@@ -478,6 +479,8 @@
         text: match.matchedText,
         maskedText: match.maskedText,
         position: `Line ${lineNumber}, Char ${charPosition}`,
+        index: match.index,
+        length: match.length,
       });
     });
 
@@ -503,10 +506,16 @@
       matches.forEach((match, index) => {
         hasMatches = true;
         // Safely escape HTML to prevent XSS
-        const safeText = match.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeText = match.text
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
         const safeMaskedText = match.maskedText
           .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
         tableRowsHTML += `
           <tr class="privacy-warning-row">
             <td class="privacy-warning-cell">${index === 0 ? ruleName : ""}</td>
@@ -514,7 +523,31 @@
               config.styles.highlightColor
             )}, 0.3);">${safeText}</code></td>
             <td class="privacy-warning-cell"><code>${safeMaskedText}</code></td>
-            <td class="privacy-warning-cell">${match.position}</td>
+            <td class="privacy-warning-cell position-cell" data-index="${
+              match.index
+            }" data-length="${
+          match.length
+        }" style="cursor: pointer; text-decoration: underline;">${
+          match.position
+        }</td>
+            <td class="privacy-warning-cell">
+              ${
+                match.maskedText !== match.text
+                  ? `
+                <button class="undo-masking-btn icon-button" 
+                  data-index="${match.index}" 
+                  data-length="${match.length}" 
+                  data-original="${safeText}"
+                  title="Undo masking">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7v6h6"></path>
+                    <path d="M3 13c0-4.97 4.03-9 9-9a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-6-2.3"></path>
+                  </svg>
+                </button>
+              `
+                  : ""
+              }
+            </td>
           </tr>
         `;
       });
@@ -530,6 +563,7 @@
               <th class="privacy-warning-header-cell">Original Text</th>
               <th class="privacy-warning-header-cell">Masked Text</th>
               <th class="privacy-warning-header-cell">Position</th>
+              <th class="privacy-warning-header-cell">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -546,6 +580,61 @@
 
     // Update the DOM with new content
     warningElement.innerHTML = headerHTML + contentHTML;
+
+    // Add click handlers for position cells
+    const positionCells = warningElement.querySelectorAll(".position-cell");
+    positionCells.forEach((cell) => {
+      cell.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const index = parseInt(cell.dataset.index);
+        const length = parseInt(cell.dataset.length);
+
+        // Focus the input and select the text
+        chatInputElement.focus();
+        chatInputElement.setSelectionRange(index, index + length);
+      });
+    });
+
+    // Add click handlers for undo buttons
+    const undoButtons = warningElement.querySelectorAll(".undo-masking-btn");
+    undoButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const index = parseInt(button.dataset.index);
+        const length = parseInt(button.dataset.length);
+        const originalText = button.dataset.original
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
+
+        // Get the current text and cursor position
+        const currentText = chatInputElement.value;
+        const cursorPosition = chatInputElement.selectionStart;
+
+        // Replace the masked text with original text
+        const newText =
+          currentText.substring(0, index) +
+          originalText +
+          currentText.substring(index + length);
+
+        // Add this region to ignored regions
+        ignoredRegions.push({
+          start: index,
+          end: index + originalText.length,
+          text: originalText,
+        });
+
+        // Update the input
+        chatInputElement.value = newText;
+
+        // Restore cursor position
+        chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
+
+        // Re-check for sensitive info to update UI
+        setTimeout(checkForSensitiveInfo, 0);
+      });
+    });
   }
 
   // Helper function to convert hex to RGB
