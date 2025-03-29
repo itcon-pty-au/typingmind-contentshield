@@ -363,16 +363,15 @@
     // Sort matches by index to handle overlapping matches
     activeMatches.sort((a, b) => a.index - b.index);
 
+    // Store the matches before any masking is applied
+    lastActiveMatches = activeMatches;
+
     // Update UI based on matches
     updateChatInputStyle(activeMatches.length > 0);
 
-    // Only update if matches have changed
-    if (!arraysEqual(lastActiveMatches, activeMatches)) {
-      lastActiveMatches = activeMatches;
-      // If warning is already showing, update it to reflect new matches
-      if (document.getElementById("privacy-warning-tooltip")) {
-        showPrivacyWarning();
-      }
+    // Show warning if there are any matches
+    if (activeMatches.length > 0) {
+      showPrivacyWarning();
     }
 
     // Update the input value with masked text if there are matches that should be masked
@@ -419,10 +418,10 @@
   function updateChatInputStyle(hasSensitiveInfo) {
     if (!chatInputElement) return;
 
-    if (hasSensitiveInfo) {
-      // Check if ALL active matches have masking enabled
+    if (hasSensitiveInfo && lastActiveMatches.length > 0) {
+      // Check if ALL active matches have masking enabled and are currently masked
       const allMatchesMasked = lastActiveMatches.every(
-        (match) => match.maskedText !== match.matchedText
+        (match) => match.shouldMask && match.maskedText !== match.matchedText
       );
       const borderColor = allMatchesMasked
         ? "#22c55e" // Green for all masked
