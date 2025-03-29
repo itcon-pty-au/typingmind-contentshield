@@ -328,7 +328,7 @@
             if (rule.masking?.enabled) {
               maskedText =
                 maskedText.substring(0, match.index) +
-                maskText(matchedText, rule) +
+                maskedText +
                 maskedText.substring(match.index + matchedText.length);
             }
           }
@@ -365,7 +365,7 @@
           if (rule.masking?.enabled) {
             maskedText =
               maskedText.substring(0, index) +
-              maskText(matchedText, rule) +
+              maskedText +
               maskedText.substring(index + rule.pattern.length);
           }
 
@@ -392,10 +392,24 @@
     }
 
     // Update the input value with masked text if there are matches
-    if (activeMatches.length > 0 && maskedText !== text) {
-      const cursorPosition = chatInputElement.selectionStart;
-      chatInputElement.value = maskedText;
-      chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
+    if (activeMatches.length > 0) {
+      let finalMaskedText = text;
+      // Apply masking from last to first to maintain correct indices
+      for (let i = activeMatches.length - 1; i >= 0; i--) {
+        const match = activeMatches[i];
+        if (match.maskedText !== match.matchedText) {
+          finalMaskedText =
+            finalMaskedText.substring(0, match.index) +
+            match.maskedText +
+            finalMaskedText.substring(match.index + match.length);
+        }
+      }
+
+      if (finalMaskedText !== text) {
+        const cursorPosition = chatInputElement.selectionStart;
+        chatInputElement.value = finalMaskedText;
+        chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
+      }
     }
   }
 
