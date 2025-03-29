@@ -9,86 +9,98 @@
       {
         id: 1,
         type: "regex",
-        pattern: "\\b(?:\\d[ -]*?){13,16}\\b",
+        pattern: "\\b(?!\\*+)(?:\\d[ -]*?){13,16}\\b",
         name: "Credit Card Number",
         active: true,
-        masking: {
-          enabled: true,
-          mode: "direct_text",
-          pattern: "*",
-          preserveFormat: true,
-        },
+        description: "Matches credit card numbers that aren't masked",
       },
       {
         id: 2,
         type: "regex",
-        pattern: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+        pattern:
+          "\\b(?!\\*+)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
         name: "Email Address",
         active: true,
-        masking: {
-          enabled: true,
-          mode: "direct_text",
-          pattern: "*",
-          preserveStart: 1,
-          preserveEnd: 0,
-        },
+        description: "Matches email addresses that aren't masked",
       },
       {
         id: 3,
         type: "regex",
-        pattern: "\\b(?:\\d{3}[-.]?){2}\\d{4}\\b",
+        pattern: "\\b(?!\\*+)(?:\\d{3}[-.]?){2}\\d{4}\\b",
         name: "SSN",
         active: true,
-        masking: {
-          enabled: true,
-          mode: "direct_text",
-          pattern: "*",
-          preserveEnd: 4,
-        },
+        description: "Matches SSNs that aren't masked",
       },
       {
         id: 4,
         type: "variable",
-        pattern: "(password|secret|key|token)\\s*=\\s*[\"']([^\"']+)[\"']",
-        name: "Secret Variable",
+        pattern:
+          "(?:password|pwd|pass|secret|auth[_-]?key)\\s*[:=]\\s*['\"](?!\\*+)[^'\"]+['\"]",
+        name: "Basic Credentials",
         active: true,
-        masking: {
-          enabled: true,
-          mode: "variable_value",
-          pattern: "*",
-          fixedLength: 3,
-        },
+        description:
+          "Matches basic credential assignments including passwords and secrets",
       },
       {
         id: 5,
-        type: "string",
-        pattern: "confidential",
-        name: "Confidential Reference",
+        type: "variable",
+        pattern:
+          "(?:api[_-]?(?:key|token)|access[_-]?(?:key|token)|client[_-]?secret|(?:private|secret|encryption|crypto)[_-]?key)\\s*[:=]\\s*['\"](?!\\*+)[A-Za-z0-9+/=._-]{8,}['\"]",
+        name: "Formatted Credentials",
         active: true,
-        caseSensitive: false,
-        masking: {
-          enabled: true,
-          mode: "direct_text",
-          pattern: "*",
-          preserveLength: true,
-        },
+        description:
+          "Matches credentials requiring specific formats like API keys and tokens",
       },
       {
         id: 6,
-        type: "string",
-        pattern: "secret",
-        name: "Secret Reference",
+        type: "variable",
+        pattern:
+          "\\$env:(?:api[_-]?key|apikey|access[_-]?key|secret|password|(?:azure|aws|google)(?:_|\\s)?(?:account|secret|subscription|key))\\s*=\\s*['\"](?!\\*+)[A-Za-z0-9+/=._-]{8,}['\"]",
+        name: "Environment Credentials",
         active: true,
-        caseSensitive: false,
-        masking: {
-          enabled: true,
-          mode: "direct_text",
-          pattern: "*",
-          preserveLength: true,
-        },
+        description:
+          "Matches PowerShell environment variables containing credentials including cloud provider keys",
+      },
+      {
+        id: 7,
+        type: "variable",
+        pattern:
+          "ConnectionString\\s*=\\s*['\"](?:Data Source|Server)=[^;]+;(?:Initial Catalog|Database)=[^;]+;(?:User ?Id|UID)=[^;]+;(?:Password|PWD)=(?!\\*+)[^;]+['\"]",
+        name: "Connection String",
+        active: true,
+        description: "Matches database connection strings with credentials",
+      },
+      {
+        id: 8,
+        type: "variable",
+        pattern:
+          "(?:(?:ANTHROPIC_API_KEY|anthropic_key)\\s*[:=]\\s*['\"](?!\\*+)sk-ant-[A-Za-z0-9]{32,}['\"]|(?:OPENAI_API_KEY|openai_key)\\s*[:=]\\s*['\"](?!\\*+)sk-[A-Za-z0-9]{32,}['\"]|(?:GOOGLE_AI_KEY|gemini_key)\\s*[:=]\\s*['\"](?!\\*+)AIza[A-Za-z0-9_-]{35,}['\"])",
+        name: "AI API Keys",
+        active: true,
+        description:
+          "Matches common AI service API keys with their specific formats",
+      },
+      {
+        id: 9,
+        type: "regex",
+        pattern:
+          "-----BEGIN\\s+(?:RSA|OPENSSH|DSA|EC|PGP)\\s+PRIVATE\\s+KEY-----(?!\\*+)[\\s\\S]*?-----END\\s+(?:RSA|OPENSSH|DSA|EC|PGP)\\s+PRIVATE\\s+KEY-----",
+        name: "Private Key",
+        active: true,
+        description: "Matches private key files that aren't masked",
+      },
+      {
+        id: 10,
+        type: "variable",
+        pattern:
+          '"(?:password|secret|apiKey|token|auth|(?:firebase|mongodb|redis)(?:Url|Uri|Connection)|(?:stripe|paypal|square)(?:Key|Secret|Token)|(?:aws|azure|gcp)(?:Key|Secret|Token|Credential)|(?:oauth|jwt|bearer)Token|(?:private|public)Key)"\\s*:\\s*(?:"(?!\\*+)[^"]+"|{[^}]*"value"\\s*:\\s*"(?!\\*+)[^"]+"[^}]*})',
+        name: "JSON Credentials",
+        active: true,
+        description:
+          "Matches various credential patterns in JSON format including service credentials, tokens, and keys",
       },
     ],
-    nextRuleId: 7,
+    nextRuleId: 11,
     styles: {
       highlightColor: "#ff0000",
       borderWidth: "2px",
@@ -1053,6 +1065,11 @@
               ? `<br>Case Sensitive: ${rule.caseSensitive ? "Yes" : "No"}`
               : ""
           }
+          ${
+            rule.description
+              ? `<br>Description: <span class="text-gray-400">${rule.description}</span>`
+              : ""
+          }
         </div>
       `;
 
@@ -1177,6 +1194,13 @@
             existingRule ? existingRule.pattern : ""
           }">
         </div>
+
+        <div class="form-group">
+          <label for="rule-description-input">Description (Optional)</label>
+          <textarea id="rule-description-input" rows="2" placeholder="Describe what this rule detects...">${
+            existingRule ? existingRule.description || "" : ""
+          }</textarea>
+        </div>
         
         <div id="case-sensitive-container" class="form-group" ${
           existingRule && existingRule.type !== "string"
@@ -1210,6 +1234,9 @@
       "#case-sensitive-container"
     );
     const patternInput = editorContent.querySelector("#rule-pattern-input");
+    const descriptionInput = editorContent.querySelector(
+      "#rule-description-input"
+    );
     const validationMessage = editorContent.querySelector(
       "#regex-validation-message"
     );
@@ -1259,6 +1286,9 @@
     saveButton.addEventListener("click", (e) => {
       const nameInput = editorContent.querySelector("#rule-name-input");
       const patternInput = editorContent.querySelector("#rule-pattern-input");
+      const descriptionInput = editorContent.querySelector(
+        "#rule-description-input"
+      );
       const caseSensitiveInput = editorContent.querySelector(
         "#case-sensitive-input"
       );
@@ -1266,6 +1296,7 @@
       const name = nameInput.value.trim();
       const type = ruleTypeInput.value;
       const pattern = patternInput.value;
+      const description = descriptionInput.value.trim();
       const caseSensitive =
         type === "string" ? caseSensitiveInput.checked : undefined;
 
@@ -1290,6 +1321,7 @@
             name,
             type,
             pattern,
+            description,
             ...(type === "string" ? { caseSensitive } : {}),
           };
         }
@@ -1300,6 +1332,7 @@
           name,
           type,
           pattern,
+          description,
           active: true,
           ...(type === "string" ? { caseSensitive } : {}),
         });
@@ -2301,6 +2334,30 @@
           opacity: 1;
           transform: scale(1);
         }
+      }
+
+      .form-group textarea {
+        width: 100%;
+        padding: 0.375rem 0.5rem;
+        border: 1px solid rgb(63, 63, 70);
+        border-radius: 0.375rem;
+        background-color: rgb(39, 39, 42);
+        color: white;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        outline: none;
+        resize: vertical;
+        min-height: 60px;
+      }
+
+      .form-group textarea:focus {
+        border-color: rgb(59, 130, 246);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      }
+
+      .rule-details .text-gray-400 {
+        color: rgb(156, 163, 175);
+        font-style: italic;
       }
     `;
     document.head.appendChild(styleElement);

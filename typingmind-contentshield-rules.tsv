@@ -2,42 +2,36 @@ id	type	pattern	name	active	description	caseSensitive
 1	regex	\b(?!\*+)(?:\d[ -]*?){13,16}\b	Credit Card Number	true	Matches credit card numbers that aren't masked	
 2	regex	\b(?!\*+)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b	Email Address	true	Matches email addresses that aren't masked	
 3	regex	\b(?!\*+)(?:\d{3}[-.]?){2}\d{4}\b	SSN	true	Matches SSNs that aren't masked	
-4	variable	(?:password|pwd|pass)\s*[:=]\s*['"](?!\*+)[^'"]+['"]	Password Assignment	true	Matches password assignments that aren't masked	
-5	string	confidential	Confidential Reference	true	Matches confidential references	true
-6	string	secret	Secret Reference	true	Matches secret references	true
-7	variable	(?:api[_-]?key|apikey|api[_-]?token)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9+/=._-]{8,}['"]	API Key Assignment	true	Matches API key assignments that aren't masked	
-8	variable	(?:access[_-]?key|access[_-]?token|client[_-]?secret)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9+/=._-]{8,}['"]	Access Key Assignment	true	Matches access key assignments that aren't masked	
-9	variable	\$env:(?:api[_-]?key|apikey|access[_-]?key|secret|password)\s*=\s*['"](?!\*+)[A-Za-z0-9+/=._-]{8,}['"]	PowerShell Credentials	true	Matches PowerShell environment variables containing credentials	
-10	variable	ConnectionString\s*=\s*['"](?:Data Source|Server)=[^;]+;(?:Initial Catalog|Database)=[^;]+;(?:User ?Id|UID)=[^;]+;(?:Password|PWD)=(?!\*+)[^;]+['"]	Connection String	true	Matches database connection strings with credentials	
-11	regex	\b(?!\*+)(?:\d{10}\b|(?:\d{3}[-. ])(?:\d{3}[-. ])(?:\d{4}))	Phone Number	true	Matches phone numbers that aren't masked	
-12	regex	\b(?!\*+)\d{1,5}\s[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\s(?:Street|St|Avenue|Ave|Boulevard|Blvd|Road|Rd|Highway|Hwy|Lane|Ln|Drive|Dr|Court|Ct|Plaza|Plz|Terrace|Ter)\b,?\s*(?:[A-Z][a-z]+(?:\s[A-Z][a-z]+)*,?\s*)?(?:[A-Z]{2})\s*(?:\d{5})?(?:-\d{4})?\b	Physical Address	true	Matches physical addresses that aren't masked	
-13	regex	\b(?!\*+)(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b	MAC Address	true	Matches MAC addresses that aren't masked	
-14	regex	\b(?!\*+)(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b	IPv4 Address	true	Matches IPv4 addresses that aren't masked	
-15	regex	\b(?!\*+)(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b	IPv6 Address	true	Matches IPv6 addresses that aren't masked	
-16	regex	-----BEGIN\s+(?:RSA|OPENSSH|DSA|EC|PGP)\s+PRIVATE\s+KEY-----(?!\*+)[\s\S]*?-----END\s+(?:RSA|OPENSSH|DSA|EC|PGP)\s+PRIVATE\s+KEY-----	Private Key	true	Matches private key files that aren't masked	
-17	variable	(?:azure|aws|google)(?:_|\s)?(?:account|secret|subscription|key)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9+/=._-]{8,}['"]	Cloud Provider Credentials	true	Matches cloud provider credentials that aren't masked	
-18	regex	\bNMI\s*[:=]\s*['"]?(?!\*+)\d{10,11}['"]?	NMI Reference	true	Matches National Metering Identifier references that aren't masked	
-19	variable	jwt\s*[:=]\s*['"](?!\*+)[A-Za-z0-9_\-.]+\.[A-Za-z0-9_\-.]+\.[A-Za-z0-9_\-.]+['"]	JWT Token Assignment	true	Matches JWT token assignments that aren't masked	
-20	variable	Authorization\s*[:=]\s*['"](?!\*+)Bearer\s+[A-Za-z0-9._-]+['"]	Bearer Token Assignment	true	Matches Bearer token assignments that aren't masked	
-21	variable	(?:client[_-]?(?:id|secret))\s*[:=]\s*['"](?!\*+)[A-Za-z0-9\-_.]{8,}['"]	OAuth Client Credentials	true	Matches OAuth client credentials that aren't masked	
-22	variable	var\s+(?:config|settings)\s*=\s*\{[^}]*['"](?:apiKey|secretKey|authToken|password|credentials)['"]:\s*['"](?!\*+)[^'"]+['"]	JavaScript Config Secrets	true	Matches JavaScript configuration objects containing credentials	
-23	regex	\b(?!\*+)[A-Za-z0-9+/]{40,}\b	Base64 Encoded Secret	true	Matches long Base64 encoded strings that might be secrets	
-24	variable	(?:github|gitlab|bitbucket)\s*[:=]\s*['"](?!\*+)(?:ghp|glpat|gl-pat)_[A-Za-z0-9_-]{20,}['"]	Git Provider Token	true	Matches Git provider access tokens that aren't masked	
-25	regex	\b(?:meter|customer|account|service)\s*id\s*[:=]\s*['"]?(?!\*+)\d{5,}['"]?	Utility Industry ID	true	Matches utility industry identifiers that aren't masked	
-26	variable	(?:private|secret|auth)[_-]?key\s*[:=]\s*['"](?!\*+)[A-Za-z0-9+/=._-]{8,}['"]	Generic Secret Key	true	Matches generic secret or private key assignments	
-27	variable	(?:encryption|crypto)[_-]?key\s*[:=]\s*['"](?!\*+)[A-Za-z0-9+/=._-]{16,}['"]	Encryption Key	true	Matches encryption or cryptographic key assignments	
-28	regex	\b(?!\*+)4[0-9]{12}(?:[0-9]{3})?(?![0-9])\b	Visa Card	true	Matches Visa card numbers specifically	
-29	regex	\b(?!\*+)5[1-5][0-9]{14}(?![0-9])\b	Mastercard	true	Matches Mastercard numbers specifically	
-30	regex	\b(?!\*+)3[47][0-9]{13}(?![0-9])\b	American Express	true	Matches American Express card numbers specifically	
-31	variable	(?:stripe|paypal)[_-]?(?:key|token|secret)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9_-]{10,}['"]	Payment Provider Credentials	true	Matches payment provider API credentials	
-32	variable	(?:firebase|mongodb|redis)[_-]?(?:url|uri|connection)\s*[:=]\s*['"](?!\*+)[^'"]+['"]	Database Connection URL	true	Matches database connection URLs with potential credentials	
-33	regex	\b(?!\*+)(?:[0-9]{4}[- ]){3}[0-9]{4}\b	Credit Card with Spaces	true	Matches credit card numbers with consistent spacing	
-34	variable	(?:session|cookie)[_-]?secret\s*[:=]\s*['"](?!\*+)[^'"]+['"]	Session Secret	true	Matches session or cookie secrets in web applications	
-35	regex	\b(?!\*+)[A-Z0-9]{20,}\b	Generic API Key	true	Matches typical API key formats (20+ uppercase alphanumeric)	
-36	variable	"(?:password|secret|apiKey|token|auth)"\s*:\s*"(?!\*+)[^"]+?"	JSON String Credentials	true	Matches sensitive credentials in JSON string format	
-37	variable	"(?:password|secret|apiKey|token|auth)"\s*:\s*\{[^}]*"value"\s*:\s*"(?!\*+)[^"]+?"[^}]*\}	JSON Object Credentials	true	Matches sensitive credentials in JSON object format	
-38	variable	"(?:firebase|mongodb|redis)(?:Url|Uri|Connection)"\s*:\s*"(?!\*+)[^"]+?"	JSON Database URL	true	Matches database connection strings in JSON	
-39	variable	"(?:stripe|paypal|square)(?:Key|Secret|Token)"\s*:\s*"(?!\*+)[^"]+?"	JSON Payment Credentials	true	Matches payment provider credentials in JSON	
-40	variable	"(?:aws|azure|gcp)(?:Key|Secret|Token|Credential)"\s*:\s*"(?!\*+)[^"]+?"	JSON Cloud Credentials	true	Matches cloud provider credentials in JSON	
-41	variable	"(?:oauth|jwt|bearer)Token"\s*:\s*"(?!\*+)[^"]+?"	JSON Auth Token	true	Matches authentication tokens in JSON	
-42	variable	"(?:private|public)Key"\s*:\s*"(?!\*+)[^"]+?"	JSON Key Pair	true	Matches cryptographic keys in JSON	
+4	variable	(?:password|pwd|pass|secret|auth[_-]?key)\s*[:=]\s*['"](?!\*+)[^'"]+['"]	Basic Credentials	true	Matches basic credential assignments including passwords and secrets	
+5	variable	(?:api[_-]?(?:key|token)|access[_-]?(?:key|token)|client[_-]?secret|(?:private|secret|encryption|crypto)[_-]?key)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9+/=._-]{8,}['"]	Formatted Credentials	true	Matches credentials requiring specific formats like API keys and tokens	
+6	string	confidential	Confidential Reference	true	Matches confidential references	true
+7	string	secret	Secret Reference	true	Matches secret references	true
+8	variable	\$env:(?:api[_-]?key|apikey|access[_-]?key|secret|password|(?:azure|aws|google)(?:_|\s)?(?:account|secret|subscription|key))\s*=\s*['"](?!\*+)[A-Za-z0-9+/=._-]{8,}['"]	Environment Credentials	true	Matches PowerShell environment variables containing credentials including cloud provider keys	
+9	variable	ConnectionString\s*=\s*['"](?:Data Source|Server)=[^;]+;(?:Initial Catalog|Database)=[^;]+;(?:User ?Id|UID)=[^;]+;(?:Password|PWD)=(?!\*+)[^;]+['"]	Connection String	true	Matches database connection strings with credentials	
+10	regex	\b(?!\*+)(?:\d{10}\b|(?:\d{3}[-. ])(?:\d{3}[-. ])(?:\d{4}))	Phone Number	true	Matches phone numbers that aren't masked	
+11	regex	\b(?!\*+)\d{1,5}\s[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\s(?:Street|St|Avenue|Ave|Boulevard|Blvd|Road|Rd|Highway|Hwy|Lane|Ln|Drive|Dr|Court|Ct|Plaza|Plz|Terrace|Ter)\b,?\s*(?:[A-Z][a-z]+(?:\s[A-Z][a-z]+)*,?\s*)?(?:[A-Z]{2})\s*(?:\d{5})?(?:-\d{4})?\b	Physical Address	true	Matches physical addresses that aren't masked	
+12	regex	\b(?!\*+)(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b	MAC Address	true	Matches MAC addresses that aren't masked	
+13	regex	\b(?!\*+)(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b	IPv4 Address	true	Matches IPv4 addresses that aren't masked	
+14	regex	\b(?!\*+)(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b	IPv6 Address	true	Matches IPv6 addresses that aren't masked	
+15	regex	-----BEGIN\s+(?:RSA|OPENSSH|DSA|EC|PGP)\s+PRIVATE\s+KEY-----(?!\*+)[\s\S]*?-----END\s+(?:RSA|OPENSSH|DSA|EC|PGP)\s+PRIVATE\s+KEY-----	Private Key	true	Matches private key files that aren't masked	
+16	regex	\b(?!\*+)(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|(?:[0-9]{4}[- ]){3}[0-9]{4})\b	Payment Card Numbers	true	Matches various payment card formats including Visa, Mastercard, and Amex	
+17	regex	\bNMI\s*[:=]\s*['"]?(?!\*+)\d{10,11}['"]?	NMI Reference	true	Matches National Metering Identifier references that aren't masked	
+18	variable	(?:jwt\s*[:=]\s*['"](?!\*+)[A-Za-z0-9_\-.]+\.[A-Za-z0-9_\-.]+\.[A-Za-z0-9_\-.]+['"]|Authorization\s*[:=]\s*['"](?!\*+)Bearer\s+[A-Za-z0-9._-]+['"])	Bearer and JWT Tokens	true	Matches JWT tokens and Bearer authorization tokens	
+19	regex	\b(?!\*+)[A-Z0-9]{20,}\b	Generic API Key	true	Matches typical API key formats (20+ uppercase alphanumeric)	
+20	variable	"(?:password|secret|apiKey|token|auth|(?:firebase|mongodb|redis)(?:Url|Uri|Connection)|(?:stripe|paypal|square)(?:Key|Secret|Token)|(?:aws|azure|gcp)(?:Key|Secret|Token|Credential)|(?:oauth|jwt|bearer)Token|(?:private|public)Key)"\s*:\s*(?:"(?!\*+)[^"]+?"|\{[^}]*"value"\s*:\s*"(?!\*+)[^"]+?"[^}]*\})	JSON Credentials	true	Matches various credential patterns in JSON format including service credentials, tokens, and keys	
+21	regex	\b(?!\*+)[A-Za-z0-9+/]{40,}\b	Base64 Encoded Secret	true	Matches long Base64 encoded strings that might be secrets	
+22	regex	\b(?:meter|customer|account|service)\s*id\s*[:=]\s*['"]?(?!\*+)\d{5,}['"]?	Utility Industry ID	true	Matches utility industry identifiers that aren't masked	
+23	variable	(?:refresh_token|oauth_token)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9._-]{20,}['"]	OAuth Refresh Token	true	Matches OAuth refresh tokens and related OAuth credentials	
+24	regex	\b(?!\*+)(?:[A-Z0-9]{4}[-\s]){7}[A-Z0-9]{4}\b	2FA Backup Codes	true	Matches 2FA backup codes in standard format	
+25	variable	(?:sk_live_|pk_live_|rk_live_|sk_test_|pk_test_|rk_test_)[A-Za-z0-9]{24,}	Stripe Keys	true	Matches Stripe API keys with their specific prefixes	
+26	variable	(?:ghp_|github_pat_)[A-Za-z0-9_-]{36,}	GitHub Tokens	true	Matches GitHub personal access tokens and their prefixes	
+27	variable	(?:graphql_token|gql_secret)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9_-]{20,}['"]	GraphQL Credentials	true	Matches GraphQL endpoint credentials and tokens	
+28	variable	(?:webhook_secret|hook_token)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9_-]{20,}['"]	Webhook Secrets	true	Matches webhook secrets and verification tokens	
+29	variable	(?:docker_auth|container_token|registry_key)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9=_-]{20,}['"]	Container Registry	true	Matches container registry authentication tokens	
+30	variable	(?:ANTHROPIC_API_KEY|anthropic_key)\s*[:=]\s*['"](?!\*+)sk-ant-[A-Za-z0-9]{32,}['"]	Anthropic API Key	true	Matches Anthropic Claude API keys	
+31	variable	(?:OPENAI_API_KEY|openai_key)\s*[:=]\s*['"](?!\*+)sk-[A-Za-z0-9]{32,}['"]	OpenAI API Key	true	Matches OpenAI API keys	
+32	variable	(?:GOOGLE_AI_KEY|gemini_key)\s*[:=]\s*['"](?!\*+)AIza[A-Za-z0-9_-]{35,}['"]	Google AI API Key	true	Matches Google AI/Gemini API keys	
+33	variable	(?:cohere_key|COHERE_API_KEY)\s*[:=]\s*['"](?!\*+)[A-Za-z0-9]{32,}['"]	Cohere API Key	true	Matches Cohere API keys	
+34	variable	(?:replicate_key|REPLICATE_API_TOKEN)\s*[:=]\s*['"](?!\*+)r8_[A-Za-z0-9]{32,}['"]	Replicate API Key	true	Matches Replicate API tokens	
+35	regex	\b(?!\*+)xoxb-[0-9]{11,12}-[0-9]{11,12}-[A-Za-z0-9]{24}\b	Slack Bot Token	true	Matches Slack bot tokens	
+36	regex	\b(?!\*+)xoxp-[0-9]{11,12}-[0-9]{11,12}-[0-9]{11,12}-[a-z0-9]{32}\b	Slack User Token	true	Matches Slack user tokens	
