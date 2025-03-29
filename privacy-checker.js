@@ -391,14 +391,25 @@
     if (!chatInputElement) return;
 
     if (hasSensitiveInfo) {
-      chatInputElement.style.border = `${config.styles.borderWidth} solid ${config.styles.highlightColor}`;
-      chatInputElement.style.boxShadow = `0 0 5px ${config.styles.highlightColor}`;
+      const color = config.styles.highlightColor;
+      const rgbaColor = `rgba(${hexToRgb(color)}, 0.3)`;
+      const rgbaColorFaint = `rgba(${hexToRgb(color)}, 0.1)`;
+
+      chatInputElement.style.border = `${config.styles.borderWidth} solid ${color}`;
+      chatInputElement.style.boxShadow = `
+        0 0 5px ${color},
+        0 0 10px ${rgbaColor},
+        0 0 15px ${rgbaColorFaint},
+        inset 0 0 5px ${rgbaColorFaint}
+      `;
+      chatInputElement.style.transition = "all 0.3s ease";
 
       // Show tooltip with warning
       showPrivacyWarning();
     } else {
       chatInputElement.style.border = "";
       chatInputElement.style.boxShadow = "";
+      chatInputElement.style.transition = "all 0.3s ease";
 
       // Hide tooltip if it exists
       hidePrivacyWarning();
