@@ -43,6 +43,19 @@
 - Local storage of configurations with reasonable defaults
 - Non-intrusive UI that integrates seamlessly with the TypingMind interface
 
+## Screenshots
+
+<div align="center">
+  <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+    <img src="screenshots/sample.PNG" alt="Privacy Checker detecting sensitive information" width="600"/>
+    <img src="screenshots/config1.PNG" alt="Privacy Checker configuration panel" width="600"/>
+    <img src="screenshots/config2.PNG" alt="Privacy Checker styles" width="600"/>
+    <img src="screenshots/rule-management-regex.PNG" alt="Regex rule to match string patterns" width="600"/>
+    <img src="screenshots/rule-management-string.PNG" alt="Simple string matching" width="600"/>
+    <img src="screenshots/rule-management-variable.PNG" alt="Regex rule to identify variable assignments" width="600"/>
+  </div>
+</div>
+
 ## Using this extension
 
 1. Load `https://itcon-pty-au.github.io/typingmind-privacy-checker/privacy-checker.js` into Menu > Preferences > Extension in TypingMind.
