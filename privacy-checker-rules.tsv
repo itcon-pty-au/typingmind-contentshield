@@ -34,3 +34,10 @@ id	type	pattern	name	active	description	caseSensitive
 33	regex	\b(?!\*+)(?:[0-9]{4}[- ]){3}[0-9]{4}\b	Credit Card with Spaces	true	Matches credit card numbers with consistent spacing	
 34	variable	(?:session|cookie)[_-]?secret\s*[:=]\s*['"](?!\*+)[^'"]+['"]	Session Secret	true	Matches session or cookie secrets in web applications	
 35	regex	\b(?!\*+)[A-Z0-9]{20,}\b	Generic API Key	true	Matches typical API key formats (20+ uppercase alphanumeric)	
+36	variable	"(?:password|secret|apiKey|token|auth)"\s*:\s*"(?!\*+)[^"]+?"	JSON String Credentials	true	Matches sensitive credentials in JSON string format	
+37	variable	"(?:password|secret|apiKey|token|auth)"\s*:\s*\{[^}]*"value"\s*:\s*"(?!\*+)[^"]+?"[^}]*\}	JSON Object Credentials	true	Matches sensitive credentials in JSON object format	
+38	variable	"(?:firebase|mongodb|redis)(?:Url|Uri|Connection)"\s*:\s*"(?!\*+)[^"]+?"	JSON Database URL	true	Matches database connection strings in JSON	
+39	variable	"(?:stripe|paypal|square)(?:Key|Secret|Token)"\s*:\s*"(?!\*+)[^"]+?"	JSON Payment Credentials	true	Matches payment provider credentials in JSON	
+40	variable	"(?:aws|azure|gcp)(?:Key|Secret|Token|Credential)"\s*:\s*"(?!\*+)[^"]+?"	JSON Cloud Credentials	true	Matches cloud provider credentials in JSON	
+41	variable	"(?:oauth|jwt|bearer)Token"\s*:\s*"(?!\*+)[^"]+?"	JSON Auth Token	true	Matches authentication tokens in JSON	
+42	variable	"(?:private|public)Key"\s*:\s*"(?!\*+)[^"]+?"	JSON Key Pair	true	Matches cryptographic keys in JSON	
