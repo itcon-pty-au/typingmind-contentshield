@@ -525,6 +525,38 @@
         // Focus the input and select the text
         chatInputElement.focus();
         chatInputElement.setSelectionRange(index, index + length);
+
+        // Create a temporary div to measure the text height
+        const measureDiv = document.createElement("div");
+        // Copy all relevant styles that affect text layout
+        const styles = window.getComputedStyle(chatInputElement);
+        measureDiv.style.cssText = `
+          position: absolute;
+          visibility: hidden;
+          width: ${chatInputElement.clientWidth}px;
+          padding: ${styles.padding};
+          border: ${styles.border};
+          font-size: ${styles.fontSize};
+          font-family: ${styles.fontFamily};
+          line-height: ${styles.lineHeight};
+          white-space: ${styles.whiteSpace};
+          word-wrap: ${styles.wordWrap};
+          word-break: ${styles.wordBreak};
+          box-sizing: ${styles.boxSizing};
+        `;
+
+        // Get text before the match
+        const textBeforeMatch = chatInputElement.value.substring(0, index);
+        measureDiv.textContent = textBeforeMatch;
+        document.body.appendChild(measureDiv);
+
+        // Calculate the height of the text before our target
+        const textHeight = measureDiv.offsetHeight;
+        document.body.removeChild(measureDiv);
+
+        // Scroll to the position with some padding
+        const lineHeight = parseInt(styles.lineHeight);
+        chatInputElement.scrollTop = Math.max(0, textHeight - lineHeight);
       });
     });
   }
