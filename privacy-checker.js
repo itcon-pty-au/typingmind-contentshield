@@ -609,10 +609,16 @@
       matches.forEach((match, index) => {
         hasMatches = true;
         // Safely escape HTML to prevent XSS
-        const safeText = match.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const safeText = match.text
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
         const safeMaskedText = match.maskedText
           .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
         tableRowsHTML += `
           <tr class="privacy-warning-row">
             <td class="privacy-warning-cell">${index === 0 ? ruleName : ""}</td>
@@ -679,7 +685,11 @@
         e.stopPropagation();
         const index = parseInt(button.dataset.index);
         const length = parseInt(button.dataset.length);
-        const originalText = button.dataset.original;
+        const originalText = button.dataset.original
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
 
         // Get the current text and cursor position
         const currentText = chatInputElement.value;
