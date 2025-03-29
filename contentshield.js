@@ -771,14 +771,10 @@
             <label>Menu & Keyboard Controls</label>
             <div class="space-y-2">
               <div class="flex items-center">
-                <select id="menu-visibility" class="flex-grow">
-                  <option value="show" ${
-                    config.menuButton.show ? "selected" : ""
-                  }>Show Shield menu</option>
-                  <option value="hide" ${
-                    !config.menuButton.show ? "selected" : ""
-                  }>Hide Shield menu</option>
-                </select>
+                <input type="checkbox" id="menu-visibility" class="mr-2" style="width: auto; appearance: auto; -webkit-appearance: auto; opacity: 1; position: static;" ${
+                  config.menuButton.show ? "checked" : ""
+                }>
+                <label for="menu-visibility" class="text-sm" style="color: rgb(161, 161, 170);">Add to Typingmind Menu</label>
               </div>
               
               <div class="flex items-center">
@@ -905,7 +901,7 @@
         applyStyleChanges();
       } else if (e.target.id === "menu-visibility") {
         // Toggle menu placement section opacity and disabled state
-        const isHidden = e.target.value === "hide";
+        const isHidden = !e.target.checked;
         const placementSection = document.querySelector(
           ".menu-placement-section"
         );
@@ -1428,12 +1424,12 @@
     const placementReference = document.getElementById(
       "placement-reference"
     ).value;
-    const menuVisibility = document.getElementById("menu-visibility").value;
+    const menuVisibility = document.getElementById("menu-visibility").checked;
     const keyboardShortcut = document.getElementById("keyboard-shortcut").value;
 
     // Validate: if menu is hidden, shortcut is required
     if (
-      menuVisibility === "hide" &&
+      !menuVisibility &&
       (!keyboardShortcut || keyboardShortcut.trim() === "")
     ) {
       document.getElementById("shortcut-error").classList.remove("hidden");
@@ -1455,10 +1451,10 @@
 
     // Save menu button settings
     const menuButtonChanged =
-      config.menuButton.show !== (menuVisibility === "show") ||
+      config.menuButton.show !== menuVisibility ||
       config.menuButton.shortcut !== keyboardShortcut;
 
-    config.menuButton.show = menuVisibility === "show";
+    config.menuButton.show = menuVisibility;
     config.menuButton.shortcut = keyboardShortcut;
 
     saveConfig();
@@ -1474,7 +1470,7 @@
       setupKeyboardShortcut();
 
       // Add or remove menu button
-      if (menuVisibility === "show") {
+      if (menuVisibility) {
         if (!privacyButton || !privacyButton.parentNode) {
           setupShieldButton();
         } else if (placementChanged) {
@@ -1486,7 +1482,7 @@
         privacyButton.parentNode.removeChild(privacyButton);
         privacyButton = null;
       }
-    } else if (placementChanged && menuVisibility === "show") {
+    } else if (placementChanged && menuVisibility) {
       // Reposition button if placement changed and button is visible
       setupShieldButton();
     }
@@ -1737,8 +1733,7 @@
       shortcutInput.value = parts.join("+");
 
       // Hide error if value is provided and menu button is hidden
-      const hideMenu =
-        document.getElementById("menu-visibility").value === "hide";
+      const hideMenu = document.getElementById("menu-visibility").checked;
       const shortcutError = document.getElementById("shortcut-error");
 
       if (hideMenu && shortcutInput.value.trim() !== "") {
