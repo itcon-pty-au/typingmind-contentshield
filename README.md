@@ -199,6 +199,7 @@ Toggle the checkbox next to any rule to enable or disable it without deleting it
 1. Click the "Export" button in the ContentShield configuration panel
 2. A TSV (Tab-Separated Values) file containing your rules will be downloaded
 3. The TSV format includes: id, type, pattern, name, active status, description, and case sensitivity
+4. <a href="https://github.com/itcon-pty-au/typingmind-contentshield/blob/main/typingmind-contentshield-rules.tsv">Here is a comprehensive rule set for importing </a>
 
 ### Importing rules
 
