@@ -367,15 +367,18 @@
     lastActiveMatches = activeMatches;
 
     // Update UI based on matches
-    updateChatInputStyle(activeMatches.length > 0);
+    const hasMatches = activeMatches.length > 0;
+    updateChatInputStyle(hasMatches);
 
-    // Show warning if there are any matches
-    if (activeMatches.length > 0) {
+    // Always show warning if there are matches, regardless of masking status
+    if (hasMatches) {
       showPrivacyWarning();
+    } else {
+      hidePrivacyWarning();
     }
 
     // Update the input value with masked text if there are matches that should be masked
-    if (activeMatches.length > 0) {
+    if (hasMatches) {
       let finalMaskedText = text;
       // Apply masking from last to first to maintain correct indices
       for (let i = activeMatches.length - 1; i >= 0; i--) {
@@ -418,7 +421,7 @@
   function updateChatInputStyle(hasSensitiveInfo) {
     if (!chatInputElement) return;
 
-    if (hasSensitiveInfo && lastActiveMatches.length > 0) {
+    if (hasSensitiveInfo) {
       // Check if ALL active matches have masking enabled and are currently masked
       const allMatchesMasked = lastActiveMatches.every(
         (match) => match.shouldMask && match.maskedText !== match.matchedText
@@ -429,15 +432,9 @@
 
       chatInputElement.style.border = `${config.styles.borderWidth} solid ${borderColor}`;
       chatInputElement.style.boxShadow = `0 0 5px ${borderColor}`;
-
-      // Show tooltip with warning
-      showPrivacyWarning();
     } else {
       chatInputElement.style.border = "";
       chatInputElement.style.boxShadow = "";
-
-      // Hide tooltip if it exists
-      hidePrivacyWarning();
     }
   }
 
