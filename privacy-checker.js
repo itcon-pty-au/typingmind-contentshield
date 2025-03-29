@@ -310,23 +310,26 @@
           const regex = new RegExp(rule.pattern, "g");
           let match;
           while ((match = regex.exec(text)) !== null) {
+            const matchedText = match[0];
+            const maskedText = rule.masking?.enabled
+              ? maskText(matchedText, rule)
+              : matchedText;
+
             matches.push({
               ruleName: rule.name,
               ruleId: rule.id,
-              matchedText: match[0],
+              matchedText: matchedText,
               index: match.index,
-              length: match[0].length,
-              maskedText: rule.masking?.enabled
-                ? maskText(match[0], rule)
-                : match[0],
+              length: matchedText.length,
+              maskedText: maskedText,
             });
 
             // Apply masking if enabled
             if (rule.masking?.enabled) {
               maskedText =
                 maskedText.substring(0, match.index) +
-                maskText(match[0], rule) +
-                maskedText.substring(match.index + match[0].length);
+                maskText(matchedText, rule) +
+                maskedText.substring(match.index + matchedText.length);
             }
           }
         } catch (e) {
@@ -345,15 +348,17 @@
             index,
             index + rule.pattern.length
           );
+          const maskedText = rule.masking?.enabled
+            ? maskText(matchedText, rule)
+            : matchedText;
+
           matches.push({
             ruleName: rule.name,
             ruleId: rule.id,
             matchedText: matchedText,
             index: index,
             length: rule.pattern.length,
-            maskedText: rule.masking?.enabled
-              ? maskText(matchedText, rule)
-              : matchedText,
+            maskedText: maskedText,
           });
 
           // Apply masking if enabled
@@ -471,6 +476,7 @@
       // Add match with position info
       matchesByRule[match.ruleName].push({
         text: match.matchedText,
+        maskedText: match.maskedText,
         position: `Line ${lineNumber}, Char ${charPosition}`,
       });
     });
