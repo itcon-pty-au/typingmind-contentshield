@@ -664,7 +664,22 @@
       <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
           <label class="modal-section-title">Privacy Rules</label>
-          <button id="add-rule-btn" class="button button-primary">Add Rule</button>
+          <div class="flex space-x-2">
+            <button id="delete-all-rules-btn" class="button button-danger" title="Delete all privacy rules">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete All
+            </button>
+            <button id="add-rule-btn" class="button button-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add Rule
+            </button>
+          </div>
         </div>
         <div id="privacy-rules-list" class="space-y-2 max-h-[300px] overflow-y-auto">
           <!-- Rules will be populated here -->
@@ -816,6 +831,8 @@
         togglePrivacyModal();
       } else if (e.target.id === "add-rule-btn") {
         addNewRule();
+      } else if (e.target.id === "delete-all-rules-btn") {
+        deleteAllRules();
       } else if (e.target.id === "privacy-checker-toggle") {
         togglePrivacyChecker();
       } else if (e.target.id === "save-styles-btn") {
@@ -839,7 +856,7 @@
         recordShortcut(e);
       }
 
-      // Prevent event propagation to avoid interfering with other modals
+      // Prevent event propagation
       e.stopPropagation();
     });
 
@@ -2428,5 +2445,83 @@
   } else {
     addStyles();
     init();
+  }
+
+  // Add the deleteAllRules function
+  function deleteAllRules() {
+    // Show confirmation dialog
+    const confirmDialog = document.createElement("div");
+    confirmDialog.className = "privacy-checker-modal";
+    confirmDialog.style.maxWidth = "24rem";
+    confirmDialog.innerHTML = `
+      <div class="modal-header">
+        <h3 class="modal-title text-red-500">Delete All Rules</h3>
+      </div>
+      <div class="modal-section">
+        <p class="text-white mb-4">Are you sure you want to delete all privacy rules? This action cannot be undone.</p>
+        <p class="text-gray-400 text-sm mb-4">You might want to export your rules first as a backup.</p>
+        <div class="flex justify-end space-x-2">
+          <button id="cancel-delete-all" class="button button-secondary">Cancel</button>
+          <button id="confirm-delete-all" class="button button-danger">Delete All Rules</button>
+        </div>
+      </div>
+    `;
+
+    // Create overlay
+    const overlay = document.createElement("div");
+    overlay.className =
+      "fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[100002] flex items-center justify-center";
+    overlay.appendChild(confirmDialog);
+
+    // Add to DOM
+    document.body.appendChild(overlay);
+
+    // Handle confirmation
+    document
+      .getElementById("confirm-delete-all")
+      .addEventListener("click", () => {
+        // Clear all rules
+        config.rules = [];
+        config.nextRuleId = 1;
+
+        // Save changes
+        saveConfig();
+
+        // Update UI
+        populateRulesList();
+
+        // Re-check current input
+        checkForSensitiveInfo();
+
+        // Remove confirmation dialog
+        document.body.removeChild(overlay);
+
+        // Show success message
+        const rulesSection = document.querySelector(".modal-section-title");
+        const successMessage = document.createElement("div");
+        successMessage.className = "text-green-500 text-sm ml-2 inline-block";
+        successMessage.textContent = "All rules deleted";
+        rulesSection.appendChild(successMessage);
+
+        setTimeout(() => {
+          if (successMessage.parentNode) {
+            successMessage.parentNode.removeChild(successMessage);
+          }
+        }, 2000);
+      });
+
+    // Handle cancel
+    document
+      .getElementById("cancel-delete-all")
+      .addEventListener("click", () => {
+        document.body.removeChild(overlay);
+      });
+
+    // Close on overlay click
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        document.body.removeChild(overlay);
+      }
+    });
   }
 })();
