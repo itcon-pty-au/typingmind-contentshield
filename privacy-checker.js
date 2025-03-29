@@ -298,7 +298,6 @@
 
     const text = chatInputElement.value;
     const activeMatches = [];
-    let maskedText = text;
 
     // Check each active rule
     config.rules.forEach((rule) => {
@@ -322,15 +321,8 @@
               index: match.index,
               length: matchedText.length,
               maskedText: maskedText,
+              shouldMask: rule.masking?.enabled,
             });
-
-            // Apply masking if enabled
-            if (rule.masking?.enabled) {
-              maskedText =
-                maskedText.substring(0, match.index) +
-                maskedText +
-                maskedText.substring(match.index + matchedText.length);
-            }
           }
         } catch (e) {
           console.error(`Invalid regex pattern in rule ${rule.name}:`, e);
@@ -341,7 +333,6 @@
           ? rule.pattern
           : rule.pattern.toLowerCase();
 
-        // Use indexOf to find all occurrences
         let index = searchText.indexOf(searchPattern);
         while (index !== -1) {
           const matchedText = text.substring(
@@ -359,15 +350,8 @@
             index: index,
             length: rule.pattern.length,
             maskedText: maskedText,
+            shouldMask: rule.masking?.enabled,
           });
-
-          // Apply masking if enabled
-          if (rule.masking?.enabled) {
-            maskedText =
-              maskedText.substring(0, index) +
-              maskedText +
-              maskedText.substring(index + rule.pattern.length);
-          }
 
           index = searchText.indexOf(searchPattern, index + 1);
         }
@@ -391,13 +375,13 @@
       }
     }
 
-    // Update the input value with masked text if there are matches
+    // Update the input value with masked text if there are matches that should be masked
     if (activeMatches.length > 0) {
       let finalMaskedText = text;
       // Apply masking from last to first to maintain correct indices
       for (let i = activeMatches.length - 1; i >= 0; i--) {
         const match = activeMatches[i];
-        if (match.maskedText !== match.matchedText) {
+        if (match.shouldMask && match.maskedText !== match.matchedText) {
           finalMaskedText =
             finalMaskedText.substring(0, match.index) +
             match.maskedText +
@@ -441,8 +425,8 @@
         (match) => match.maskedText !== match.matchedText
       );
       const borderColor = allMatchesMasked
-        ? "#22c55e"
-        : config.styles.highlightColor;
+        ? "#22c55e" // Green for all masked
+        : config.styles.highlightColor; // Red for some unmasked
 
       chatInputElement.style.border = `${config.styles.borderWidth} solid ${borderColor}`;
       chatInputElement.style.boxShadow = `0 0 5px ${borderColor}`;
