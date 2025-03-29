@@ -1586,24 +1586,62 @@
     }, 1500);
   }
 
-  // Export rules to JSON
+  // Export rules to TSV
   function exportRules() {
-    // Create export data with just the rules
-    const exportData = {
-      rules: config.rules,
-    };
+    // Define headers
+    const headers = [
+      "id",
+      "type",
+      "pattern",
+      "name",
+      "active",
+      "description",
+      "masking.enabled",
+      "masking.mode",
+      "masking.pattern",
+      "masking.preserveLength",
+      "masking.preserveFormat",
+      "masking.preserveStart",
+      "masking.preserveEnd",
+      "masking.fixedLength",
+      "caseSensitive",
+    ];
 
-    // Convert to JSON string
-    const jsonData = JSON.stringify(exportData, null, 2);
+    // Convert rules to TSV format
+    const rows = [
+      headers.join("\t"),
+      ...config.rules.map((rule) => {
+        return [
+          rule.id,
+          rule.type,
+          rule.pattern,
+          rule.name,
+          rule.active,
+          rule.description || "",
+          rule.masking?.enabled || false,
+          rule.masking?.mode || "",
+          rule.masking?.pattern || "*",
+          rule.masking?.preserveLength || false,
+          rule.masking?.preserveFormat || false,
+          rule.masking?.preserveStart || 0,
+          rule.masking?.preserveEnd || 0,
+          rule.masking?.fixedLength || "",
+          rule.caseSensitive || "",
+        ].join("\t");
+      }),
+    ];
+
+    // Create TSV content
+    const tsvContent = rows.join("\n");
 
     // Create a downloadable blob
-    const blob = new Blob([jsonData], { type: "application/json" });
+    const blob = new Blob([tsvContent], { type: "text/tab-separated-values" });
     const url = URL.createObjectURL(blob);
 
     // Create download link
     const downloadLink = document.createElement("a");
     downloadLink.href = url;
-    downloadLink.download = "privacy-checker-rules.json";
+    downloadLink.download = "privacy-checker-rules.tsv";
 
     // Add to DOM, click it, and remove it
     document.body.appendChild(downloadLink);
@@ -1614,12 +1652,12 @@
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
-  // Import rules from JSON
+  // Import rules from TSV
   function importRules() {
     // Create file input
     const fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = ".json";
+    fileInput.accept = ".tsv";
 
     // Handle file selection
     fileInput.addEventListener("change", (e) => {
@@ -1629,57 +1667,66 @@
       const reader = new FileReader();
       reader.onload = function (event) {
         try {
-          const importedData = JSON.parse(event.target.result);
+          // Parse TSV content
+          const lines = event.target.result.split("\n");
+          const headers = lines[0].split("\t");
 
-          // Validate imported data
-          if (!importedData.rules || !Array.isArray(importedData.rules)) {
-            throw new Error("Invalid format: No rules array found");
-          }
+          // Skip header row and parse each line
+          const importedRules = lines
+            .slice(1)
+            .filter((line) => line.trim())
+            .map((line) => {
+              const values = line.split("\t");
+              const rule = {
+                id: parseInt(values[0]),
+                type: values[1],
+                pattern: values[2],
+                name: values[3],
+                active: values[4] === "true",
+                description: values[5],
+              };
 
-          // Import rules - delta update (add new ones, don't replace existing)
+              // Parse masking configuration
+              if (values[6] === "true") {
+                rule.masking = {
+                  enabled: true,
+                  mode: values[7],
+                  pattern: values[8] || "*",
+                };
+
+                if (values[7] === "direct_text") {
+                  rule.masking.preserveLength = values[9] === "true";
+                  rule.masking.preserveFormat = values[10] === "true";
+                  rule.masking.preserveStart = parseInt(values[11]) || 0;
+                  rule.masking.preserveEnd = parseInt(values[12]) || 0;
+                } else if (values[7] === "variable_value") {
+                  rule.masking.fixedLength = parseInt(values[13]) || 3;
+                }
+              }
+
+              // Add caseSensitive for string type rules
+              if (rule.type === "string") {
+                rule.caseSensitive = values[14] === "true";
+              }
+
+              return rule;
+            });
+
+          // Validate and merge rules
           let addedCount = 0;
           let skippedCount = 0;
 
-          importedData.rules.forEach((importedRule) => {
-            // Validate masking configuration if present
-            if (importedRule.masking) {
-              if (typeof importedRule.masking.enabled !== "boolean") {
+          importedRules.forEach((importedRule) => {
+            // Validate regex patterns
+            if (importedRule.type === "regex") {
+              try {
+                new RegExp(importedRule.pattern);
+              } catch (e) {
                 console.warn(
-                  `Rule "${importedRule.name}": Invalid masking.enabled property`
+                  `Invalid regex in rule "${importedRule.name}": ${e.message}`
                 );
                 skippedCount++;
                 return;
-              }
-              if (importedRule.masking.enabled) {
-                if (
-                  !["direct_text", "variable_value"].includes(
-                    importedRule.masking.mode
-                  )
-                ) {
-                  console.warn(
-                    `Rule "${importedRule.name}": Invalid masking.mode property`
-                  );
-                  skippedCount++;
-                  return;
-                }
-                if (typeof importedRule.masking.pattern !== "string") {
-                  importedRule.masking.pattern = "*"; // Set default if invalid
-                }
-
-                // Validate mode-specific properties
-                if (importedRule.masking.mode === "direct_text") {
-                  importedRule.masking.preserveLength =
-                    !!importedRule.masking.preserveLength;
-                  importedRule.masking.preserveFormat =
-                    !!importedRule.masking.preserveFormat;
-                  importedRule.masking.preserveStart =
-                    parseInt(importedRule.masking.preserveStart) || 0;
-                  importedRule.masking.preserveEnd =
-                    parseInt(importedRule.masking.preserveEnd) || 0;
-                } else if (importedRule.masking.mode === "variable_value") {
-                  importedRule.masking.fixedLength =
-                    parseInt(importedRule.masking.fixedLength) || 3;
-                }
               }
             }
 
@@ -1705,13 +1752,13 @@
           saveConfig();
           populateRulesList();
 
-          // Re-check the current input for matches
+          // Re-check the current input
           checkForSensitiveInfo();
 
-          // Show success message with skipped rules info
+          // Show success message
           const skipMessage =
             skippedCount > 0
-              ? ` (${skippedCount} rules skipped due to invalid masking configuration)`
+              ? ` (${skippedCount} rules skipped due to validation errors)`
               : "";
           alert(
             `Import complete. Added ${addedCount} new rules${skipMessage}.`
