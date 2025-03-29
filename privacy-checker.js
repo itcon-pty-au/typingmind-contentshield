@@ -2432,6 +2432,24 @@
       #toggle-style-icon {
         transition: transform 0.3s ease;
       }
+
+      /* Confirmation dialog styles */
+      .confirmation-dialog {
+        position: relative;
+        z-index: 100003;
+        animation: confirmIn 0.2s ease-out;
+      }
+
+      @keyframes confirmIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
     `;
     document.head.appendChild(styleElement);
   }
@@ -2451,8 +2469,10 @@
   function deleteAllRules() {
     // Show confirmation dialog
     const confirmDialog = document.createElement("div");
-    confirmDialog.className = "privacy-checker-modal";
+    confirmDialog.className = "privacy-checker-modal confirmation-dialog";
     confirmDialog.style.maxWidth = "24rem";
+    confirmDialog.style.position = "relative";
+    confirmDialog.style.zIndex = "100003"; // Higher than the main modal
     confirmDialog.innerHTML = `
       <div class="modal-header">
         <h3 class="modal-title text-red-500">Delete All Rules</h3>
@@ -2470,58 +2490,81 @@
     // Create overlay
     const overlay = document.createElement("div");
     overlay.className =
-      "fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-[100002] flex items-center justify-center";
+      "fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center";
+    overlay.style.zIndex = "100002"; // Higher than the main modal
     overlay.appendChild(confirmDialog);
 
     // Add to DOM
     document.body.appendChild(overlay);
 
     // Handle confirmation
-    document
-      .getElementById("confirm-delete-all")
-      .addEventListener("click", () => {
-        // Clear all rules
-        config.rules = [];
-        config.nextRuleId = 1;
+    const confirmBtn = document.getElementById("confirm-delete-all");
+    confirmBtn.addEventListener("click", () => {
+      // Clear all rules
+      config.rules = [];
+      config.nextRuleId = 1;
 
-        // Save changes
-        saveConfig();
+      // Save changes
+      saveConfig();
 
-        // Update UI
-        populateRulesList();
+      // Update UI
+      populateRulesList();
 
-        // Re-check current input
-        checkForSensitiveInfo();
+      // Re-check current input
+      checkForSensitiveInfo();
 
-        // Remove confirmation dialog
-        document.body.removeChild(overlay);
+      // Remove confirmation dialog
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
 
-        // Show success message
-        const rulesSection = document.querySelector(".modal-section-title");
-        const successMessage = document.createElement("div");
-        successMessage.className = "text-green-500 text-sm ml-2 inline-block";
-        successMessage.textContent = "All rules deleted";
-        rulesSection.appendChild(successMessage);
+      // Show success message
+      const rulesSection = document.querySelector(".modal-section-title");
+      const successMessage = document.createElement("div");
+      successMessage.className = "text-green-500 text-sm ml-2 inline-block";
+      successMessage.textContent = "All rules deleted";
+      rulesSection.appendChild(successMessage);
 
-        setTimeout(() => {
-          if (successMessage.parentNode) {
-            successMessage.parentNode.removeChild(successMessage);
-          }
-        }, 2000);
-      });
+      setTimeout(() => {
+        if (successMessage.parentNode) {
+          successMessage.parentNode.removeChild(successMessage);
+        }
+      }, 2000);
+    });
 
     // Handle cancel
-    document
-      .getElementById("cancel-delete-all")
-      .addEventListener("click", () => {
-        document.body.removeChild(overlay);
+    const cancelBtn = document.getElementById("cancel-delete-all");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        if (overlay && overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
       });
+    }
 
     // Close on overlay click
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
-        document.body.removeChild(overlay);
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
       }
     });
+
+    // Prevent clicks on the dialog from closing the overlay
+    confirmDialog.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
+    // Add escape key handler
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        if (overlay && overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+          document.removeEventListener("keydown", handleEscape);
+        }
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
   }
 })();
