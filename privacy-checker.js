@@ -298,6 +298,7 @@
 
     const text = chatInputElement.value;
     const activeMatches = [];
+    const cursorPosition = chatInputElement.selectionStart;
 
     // Check each active rule
     config.rules.forEach((rule) => {
@@ -366,9 +367,6 @@
     // Store the matches before any masking is applied
     lastActiveMatches = activeMatches;
 
-    // Update UI based on matches
-    const hasMatches = activeMatches.length > 0;
-
     // Always show warning if there are matches in lastActiveMatches
     if (lastActiveMatches.length > 0) {
       showPrivacyWarning();
@@ -379,8 +377,10 @@
     }
 
     // Update the input value with masked text if there are matches that should be masked
-    if (hasMatches) {
+    if (activeMatches.length > 0) {
       let finalMaskedText = text;
+      let cursorOffset = 0;
+
       // Apply masking from last to first to maintain correct indices
       for (let i = activeMatches.length - 1; i >= 0; i--) {
         const match = activeMatches[i];
@@ -389,13 +389,23 @@
             finalMaskedText.substring(0, match.index) +
             match.maskedText +
             finalMaskedText.substring(match.index + match.length);
+
+          // Adjust cursor position if the match affects it
+          if (match.index < cursorPosition) {
+            const lengthDiff =
+              match.maskedText.length - match.matchedText.length;
+            cursorOffset += lengthDiff;
+          }
         }
       }
 
       if (finalMaskedText !== text) {
-        const cursorPosition = chatInputElement.selectionStart;
+        const newCursorPosition = cursorPosition + cursorOffset;
         chatInputElement.value = finalMaskedText;
-        chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
+        chatInputElement.setSelectionRange(
+          newCursorPosition,
+          newCursorPosition
+        );
       }
     }
   }
@@ -473,6 +483,8 @@
         text: match.matchedText,
         maskedText: match.maskedText,
         position: `Line ${lineNumber}, Char ${charPosition}`,
+        index: match.index,
+        length: match.length,
       });
     });
 
@@ -516,7 +528,7 @@
                   ? `
                 <button class="undo-masking-btn icon-button" 
                   data-index="${match.index}" 
-                  data-length="${match.text.length}" 
+                  data-length="${match.length}" 
                   data-original="${safeText}"
                   title="Undo masking">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -587,7 +599,7 @@
         chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
 
         // Re-check for sensitive info to update UI
-        checkForSensitiveInfo();
+        setTimeout(checkForSensitiveInfo, 0);
       });
     });
   }
