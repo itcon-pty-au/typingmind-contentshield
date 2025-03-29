@@ -111,6 +111,7 @@
   let rulesList = null;
   let lastActiveMatches = [];
   let menuItems = {};
+  let ignoredRegions = []; // Track regions that should be ignored for matching
 
   // Initialize the extension
   function init() {
@@ -286,7 +287,62 @@
     }
 
     // Add input event listener to check content in real-time
-    chatInputElement.addEventListener("input", checkForSensitiveInfo);
+    chatInputElement.addEventListener("input", (e) => {
+      const prevLength = e.target.value.length - (e.data?.length || 0);
+      const cursorPosition = e.target.selectionStart;
+
+      // Update ignored regions based on text changes
+      if (
+        e.inputType === "insertText" ||
+        e.inputType === "insertCompositionText"
+      ) {
+        // Text was inserted, adjust indices after insertion point
+        const insertedLength = e.data?.length || 0;
+        ignoredRegions = ignoredRegions.map((region) => {
+          if (region.start >= cursorPosition) {
+            return {
+              ...region,
+              start: region.start + insertedLength,
+              end: region.end + insertedLength,
+            };
+          }
+          return region;
+        });
+      } else if (
+        e.inputType === "deleteContentBackward" ||
+        e.inputType === "deleteContentForward"
+      ) {
+        // Text was deleted, adjust indices and remove affected regions
+        const deletedLength = prevLength - e.target.value.length;
+        ignoredRegions = ignoredRegions.filter((region) => {
+          // Remove regions that were completely within deleted text
+          if (
+            region.start >= cursorPosition &&
+            region.end <= cursorPosition + deletedLength
+          ) {
+            return false;
+          }
+
+          // Adjust indices for regions after deletion point
+          if (region.start >= cursorPosition) {
+            region.start = Math.max(
+              cursorPosition,
+              region.start - deletedLength
+            );
+            region.end = Math.max(cursorPosition, region.end - deletedLength);
+          }
+
+          return true;
+        });
+      }
+
+      // Clear ignored regions if space is typed
+      if (e.data === " ") {
+        ignoredRegions = [];
+      }
+
+      checkForSensitiveInfo();
+    });
 
     // Also check when the page loads
     checkForSensitiveInfo();
@@ -300,6 +356,19 @@
     const activeMatches = [];
     const cursorPosition = chatInputElement.selectionStart;
 
+    // Update ignored regions - remove any that are no longer valid
+    ignoredRegions = ignoredRegions.filter((region) => {
+      // Remove region if it's beyond text length
+      if (region.start >= text.length) return false;
+
+      // Remove region if space is encountered after it
+      const textAfterRegion = text.substring(region.start);
+      const spaceAfterRegion = textAfterRegion.indexOf(" ");
+      if (spaceAfterRegion !== -1) return false;
+
+      return true;
+    });
+
     // Check each active rule
     config.rules.forEach((rule) => {
       if (!rule.active) return;
@@ -310,20 +379,28 @@
           const regex = new RegExp(rule.pattern, "g");
           let match;
           while ((match = regex.exec(text)) !== null) {
-            const matchedText = match[0];
-            const maskedText = rule.masking?.enabled
-              ? maskText(matchedText, rule)
-              : matchedText;
-
-            matches.push({
-              ruleName: rule.name,
-              ruleId: rule.id,
-              matchedText: matchedText,
-              index: match.index,
-              length: matchedText.length,
-              maskedText: maskedText,
-              shouldMask: rule.masking?.enabled,
+            // Check if this match overlaps with any ignored region
+            const isIgnored = ignoredRegions.some((region) => {
+              const matchEnd = match.index + match[0].length;
+              return match.index < region.end && matchEnd > region.start;
             });
+
+            if (!isIgnored) {
+              const matchedText = match[0];
+              const maskedText = rule.masking?.enabled
+                ? maskText(matchedText, rule)
+                : matchedText;
+
+              matches.push({
+                ruleName: rule.name,
+                ruleId: rule.id,
+                matchedText: matchedText,
+                index: match.index,
+                length: matchedText.length,
+                maskedText: maskedText,
+                shouldMask: rule.masking?.enabled,
+              });
+            }
           }
         } catch (e) {
           console.error(`Invalid regex pattern in rule ${rule.name}:`, e);
@@ -336,23 +413,31 @@
 
         let index = searchText.indexOf(searchPattern);
         while (index !== -1) {
-          const matchedText = text.substring(
-            index,
-            index + rule.pattern.length
-          );
-          const maskedText = rule.masking?.enabled
-            ? maskText(matchedText, rule)
-            : matchedText;
-
-          matches.push({
-            ruleName: rule.name,
-            ruleId: rule.id,
-            matchedText: matchedText,
-            index: index,
-            length: rule.pattern.length,
-            maskedText: maskedText,
-            shouldMask: rule.masking?.enabled,
+          // Check if this match overlaps with any ignored region
+          const isIgnored = ignoredRegions.some((region) => {
+            const matchEnd = index + rule.pattern.length;
+            return index < region.end && matchEnd > region.start;
           });
+
+          if (!isIgnored) {
+            const matchedText = text.substring(
+              index,
+              index + rule.pattern.length
+            );
+            const maskedText = rule.masking?.enabled
+              ? maskText(matchedText, rule)
+              : matchedText;
+
+            matches.push({
+              ruleName: rule.name,
+              ruleId: rule.id,
+              matchedText: matchedText,
+              index: index,
+              length: rule.pattern.length,
+              maskedText: maskedText,
+              shouldMask: rule.masking?.enabled,
+            });
+          }
 
           index = searchText.indexOf(searchPattern, index + 1);
         }
@@ -591,6 +676,13 @@
           currentText.substring(0, index) +
           originalText +
           currentText.substring(index + length);
+
+        // Add this region to ignored regions
+        ignoredRegions.push({
+          start: index,
+          end: index + originalText.length,
+          text: originalText,
+        });
 
         // Update the input
         chatInputElement.value = newText;
