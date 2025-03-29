@@ -128,18 +128,51 @@
   // Initialize the extension
   function init() {
     loadConfig();
-    scanMenuItems();
 
-    // Setup menu button if enabled
-    if (config.menuButton.show) {
-      setupShieldButton();
+    // Wait for DOM to be fully loaded and a short delay to ensure dynamic content is loaded
+    const initializeExtension = () => {
+      console.log("Initializing ContentShield extension...");
+
+      // Initial scan of menu items
+      scanMenuItems();
+
+      // Setup menu button if enabled
+      if (config.menuButton.show) {
+        setupShieldButton();
+      }
+
+      // Setup keyboard shortcut listener
+      setupKeyboardShortcut();
+
+      setupChatMonitoring();
+      setupModalContainer();
+
+      // Add a mutation observer to detect when new buttons are added
+      const menuBar = document.querySelector(
+        '[data-element-id="workspace-bar"]'
+      );
+      if (menuBar) {
+        const observer = new MutationObserver((mutations) => {
+          console.log("Menu bar mutation detected");
+          scanMenuItems();
+        });
+
+        observer.observe(menuBar, {
+          childList: true,
+          subtree: true,
+        });
+      }
+    };
+
+    // If document is already loaded, initialize with a delay
+    if (document.readyState === "complete") {
+      setTimeout(initializeExtension, 1000);
+    } else {
+      // Otherwise wait for load event
+      window.addEventListener("load", () =>
+        setTimeout(initializeExtension, 1000)
+      );
     }
-
-    // Setup keyboard shortcut listener
-    setupKeyboardShortcut();
-
-    setupChatMonitoring();
-    setupModalContainer();
   }
 
   // Load configuration from localStorage
@@ -190,6 +223,7 @@
     const menuBar = document.querySelector('[data-element-id="workspace-bar"]');
     if (!menuBar) {
       // Try again in a second if menu bar isn't loaded yet
+      console.log("Menu bar not found, retrying in 1 second...");
       setTimeout(scanMenuItems, 1000);
       return;
     }
@@ -197,15 +231,40 @@
     // Clear existing menu items before scanning
     menuItems = {};
 
-    // Get all buttons in their original order
+    // Get all buttons
     const buttons = menuBar.querySelectorAll("button");
+    let foundSettings = false;
+    let order = 0;
 
-    // Store each button's id and label text
-    buttons.forEach((button) => {
+    console.log("Found buttons:", buttons.length);
+
+    // Store each button's id and label text up to Settings button
+    for (const button of buttons) {
       const id =
         button.getAttribute("data-element-id") ||
         button.id ||
-        `menu-item-${Object.keys(menuItems).length}`;
+        `menu-item-${order}`;
+      console.log("Processing button:", id);
+
+      // Stop scanning after Settings button
+      if (id === "workspace-tab-settings") {
+        // Include Settings button
+        const labelSpan = button.querySelector("span span");
+        const label = labelSpan
+          ? labelSpan.textContent.trim()
+          : button.textContent.trim() ||
+            id.replace(/^(workspace-tab-|menu-item-)/, "");
+
+        menuItems[id] = {
+          id,
+          label,
+          order: order,
+        };
+        foundSettings = true;
+        console.log("Found Settings button, stopping scan");
+        break;
+      }
+
       // Get text label (typically in a span inside the button)
       const labelSpan = button.querySelector("span span");
       const label = labelSpan
@@ -216,11 +275,17 @@
       menuItems[id] = {
         id,
         label,
-        order: Object.keys(menuItems).length, // Store the original order
+        order: order,
       };
-    });
+      order++;
+    }
+
+    if (!foundSettings) {
+      console.warn("Settings button not found in menu bar");
+    }
 
     console.log("Menu items found:", Object.keys(menuItems).length);
+    console.log("Menu items:", menuItems);
 
     // Refresh the placement dropdown if it exists
     const placementDropdown = document.getElementById("placement-reference");
