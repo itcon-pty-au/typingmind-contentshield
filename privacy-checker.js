@@ -298,6 +298,14 @@
       ) {
         // Text was inserted, adjust indices after insertion point
         const insertedLength = e.data?.length || 0;
+
+        // Only clear ignored regions if space is typed after them
+        if (e.data === " ") {
+          ignoredRegions = ignoredRegions.filter((region) => {
+            return cursorPosition <= region.start;
+          });
+        }
+
         ignoredRegions = ignoredRegions.map((region) => {
           if (region.start >= cursorPosition) {
             return {
@@ -334,11 +342,6 @@
 
           return true;
         });
-      }
-
-      // Clear ignored regions if space is typed
-      if (e.data === " ") {
-        ignoredRegions = [];
       }
 
       checkForSensitiveInfo();
@@ -381,8 +384,19 @@
           while ((match = regex.exec(text)) !== null) {
             // Check if this match overlaps with any ignored region
             const isIgnored = ignoredRegions.some((region) => {
-              const matchEnd = match.index + match[0].length;
-              return match.index < region.end && matchEnd > region.start;
+              // Find the next space after this region
+              const textAfterRegion = text.substring(region.start);
+              const nextSpaceIndex = textAfterRegion.indexOf(" ");
+              const effectiveEnd =
+                nextSpaceIndex === -1
+                  ? text.length
+                  : region.start + nextSpaceIndex;
+
+              // Check if match falls within the extended region (up to next space)
+              return (
+                match.index < effectiveEnd &&
+                match.index + match[0].length > region.start
+              );
             });
 
             if (!isIgnored) {
