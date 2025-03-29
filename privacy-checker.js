@@ -111,7 +111,6 @@
   let rulesList = null;
   let lastActiveMatches = [];
   let menuItems = {};
-  let ignoredRegions = []; // Track regions that should be ignored for matching
 
   // Initialize the extension
   function init() {
@@ -287,65 +286,7 @@
     }
 
     // Add input event listener to check content in real-time
-    chatInputElement.addEventListener("input", (e) => {
-      const prevLength = e.target.value.length - (e.data?.length || 0);
-      const cursorPosition = e.target.selectionStart;
-
-      // Update ignored regions based on text changes
-      if (
-        e.inputType === "insertText" ||
-        e.inputType === "insertCompositionText"
-      ) {
-        // Text was inserted, adjust indices after insertion point
-        const insertedLength = e.data?.length || 0;
-
-        // Only clear ignored regions if space is typed after them
-        if (e.data === " ") {
-          ignoredRegions = ignoredRegions.filter((region) => {
-            return cursorPosition <= region.start;
-          });
-        }
-
-        ignoredRegions = ignoredRegions.map((region) => {
-          if (region.start >= cursorPosition) {
-            return {
-              ...region,
-              start: region.start + insertedLength,
-              end: region.end + insertedLength,
-            };
-          }
-          return region;
-        });
-      } else if (
-        e.inputType === "deleteContentBackward" ||
-        e.inputType === "deleteContentForward"
-      ) {
-        // Text was deleted, adjust indices and remove affected regions
-        const deletedLength = prevLength - e.target.value.length;
-        ignoredRegions = ignoredRegions.filter((region) => {
-          // Remove regions that were completely within deleted text
-          if (
-            region.start >= cursorPosition &&
-            region.end <= cursorPosition + deletedLength
-          ) {
-            return false;
-          }
-
-          // Adjust indices for regions after deletion point
-          if (region.start >= cursorPosition) {
-            region.start = Math.max(
-              cursorPosition,
-              region.start - deletedLength
-            );
-            region.end = Math.max(cursorPosition, region.end - deletedLength);
-          }
-
-          return true;
-        });
-      }
-
-      checkForSensitiveInfo();
-    });
+    chatInputElement.addEventListener("input", checkForSensitiveInfo);
 
     // Also check when the page loads
     checkForSensitiveInfo();
@@ -357,20 +298,7 @@
 
     const text = chatInputElement.value;
     const activeMatches = [];
-    const cursorPosition = chatInputElement.selectionStart;
-
-    // Update ignored regions - remove any that are no longer valid
-    ignoredRegions = ignoredRegions.filter((region) => {
-      // Remove region if it's beyond text length
-      if (region.start >= text.length) return false;
-
-      // Remove region if space is encountered after it
-      const textAfterRegion = text.substring(region.start);
-      const spaceAfterRegion = textAfterRegion.indexOf(" ");
-      if (spaceAfterRegion !== -1) return false;
-
-      return true;
-    });
+    let maskedText = text;
 
     // Check each active rule
     config.rules.forEach((rule) => {
@@ -382,38 +310,26 @@
           const regex = new RegExp(rule.pattern, "g");
           let match;
           while ((match = regex.exec(text)) !== null) {
-            // Check if this match overlaps with any ignored region
-            const isIgnored = ignoredRegions.some((region) => {
-              // Find the next space after this region
-              const textAfterRegion = text.substring(region.start);
-              const nextSpaceIndex = textAfterRegion.indexOf(" ");
-              const effectiveEnd =
-                nextSpaceIndex === -1
-                  ? text.length
-                  : region.start + nextSpaceIndex;
+            const matchedText = match[0];
+            const maskedText = rule.masking?.enabled
+              ? maskText(matchedText, rule)
+              : matchedText;
 
-              // Check if match falls within the extended region (up to next space)
-              return (
-                match.index < effectiveEnd &&
-                match.index + match[0].length > region.start
-              );
+            matches.push({
+              ruleName: rule.name,
+              ruleId: rule.id,
+              matchedText: matchedText,
+              index: match.index,
+              length: matchedText.length,
+              maskedText: maskedText,
             });
 
-            if (!isIgnored) {
-              const matchedText = match[0];
-              const maskedText = rule.masking?.enabled
-                ? maskText(matchedText, rule)
-                : matchedText;
-
-              matches.push({
-                ruleName: rule.name,
-                ruleId: rule.id,
-                matchedText: matchedText,
-                index: match.index,
-                length: matchedText.length,
-                maskedText: maskedText,
-                shouldMask: rule.masking?.enabled,
-              });
+            // Apply masking if enabled
+            if (rule.masking?.enabled) {
+              maskedText =
+                maskedText.substring(0, match.index) +
+                maskText(matchedText, rule) +
+                maskedText.substring(match.index + matchedText.length);
             }
           }
         } catch (e) {
@@ -425,32 +341,32 @@
           ? rule.pattern
           : rule.pattern.toLowerCase();
 
+        // Use indexOf to find all occurrences
         let index = searchText.indexOf(searchPattern);
         while (index !== -1) {
-          // Check if this match overlaps with any ignored region
-          const isIgnored = ignoredRegions.some((region) => {
-            const matchEnd = index + rule.pattern.length;
-            return index < region.end && matchEnd > region.start;
+          const matchedText = text.substring(
+            index,
+            index + rule.pattern.length
+          );
+          const maskedText = rule.masking?.enabled
+            ? maskText(matchedText, rule)
+            : matchedText;
+
+          matches.push({
+            ruleName: rule.name,
+            ruleId: rule.id,
+            matchedText: matchedText,
+            index: index,
+            length: rule.pattern.length,
+            maskedText: maskedText,
           });
 
-          if (!isIgnored) {
-            const matchedText = text.substring(
-              index,
-              index + rule.pattern.length
-            );
-            const maskedText = rule.masking?.enabled
-              ? maskText(matchedText, rule)
-              : matchedText;
-
-            matches.push({
-              ruleName: rule.name,
-              ruleId: rule.id,
-              matchedText: matchedText,
-              index: index,
-              length: rule.pattern.length,
-              maskedText: maskedText,
-              shouldMask: rule.masking?.enabled,
-            });
+          // Apply masking if enabled
+          if (rule.masking?.enabled) {
+            maskedText =
+              maskedText.substring(0, index) +
+              maskText(matchedText, rule) +
+              maskedText.substring(index + rule.pattern.length);
           }
 
           index = searchText.indexOf(searchPattern, index + 1);
@@ -463,49 +379,23 @@
     // Sort matches by index to handle overlapping matches
     activeMatches.sort((a, b) => a.index - b.index);
 
-    // Store the matches before any masking is applied
-    lastActiveMatches = activeMatches;
+    // Update UI based on matches
+    updateChatInputStyle(activeMatches.length > 0);
 
-    // Always show warning if there are matches in lastActiveMatches
-    if (lastActiveMatches.length > 0) {
-      showPrivacyWarning();
-      updateChatInputStyle(true);
-    } else {
-      hidePrivacyWarning();
-      updateChatInputStyle(false);
+    // Only update if matches have changed
+    if (!arraysEqual(lastActiveMatches, activeMatches)) {
+      lastActiveMatches = activeMatches;
+      // If warning is already showing, update it to reflect new matches
+      if (document.getElementById("privacy-warning-tooltip")) {
+        showPrivacyWarning();
+      }
     }
 
-    // Update the input value with masked text if there are matches that should be masked
-    if (activeMatches.length > 0) {
-      let finalMaskedText = text;
-      let cursorOffset = 0;
-
-      // Apply masking from last to first to maintain correct indices
-      for (let i = activeMatches.length - 1; i >= 0; i--) {
-        const match = activeMatches[i];
-        if (match.shouldMask && match.maskedText !== match.matchedText) {
-          finalMaskedText =
-            finalMaskedText.substring(0, match.index) +
-            match.maskedText +
-            finalMaskedText.substring(match.index + match.length);
-
-          // Adjust cursor position if the match affects it
-          if (match.index < cursorPosition) {
-            const lengthDiff =
-              match.maskedText.length - match.matchedText.length;
-            cursorOffset += lengthDiff;
-          }
-        }
-      }
-
-      if (finalMaskedText !== text) {
-        const newCursorPosition = cursorPosition + cursorOffset;
-        chatInputElement.value = finalMaskedText;
-        chatInputElement.setSelectionRange(
-          newCursorPosition,
-          newCursorPosition
-        );
-      }
+    // Update the input value with masked text if there are matches
+    if (activeMatches.length > 0 && maskedText !== text) {
+      const cursorPosition = chatInputElement.selectionStart;
+      chatInputElement.value = maskedText;
+      chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
     }
   }
 
@@ -532,19 +422,25 @@
     if (!chatInputElement) return;
 
     if (hasSensitiveInfo) {
-      // Check if ALL active matches have masking enabled and are currently masked
+      // Check if ALL active matches have masking enabled
       const allMatchesMasked = lastActiveMatches.every(
-        (match) => match.shouldMask && match.maskedText !== match.matchedText
+        (match) => match.maskedText !== match.matchedText
       );
       const borderColor = allMatchesMasked
-        ? "#22c55e" // Green for all masked
-        : config.styles.highlightColor; // Red for some unmasked
+        ? "#22c55e"
+        : config.styles.highlightColor;
 
       chatInputElement.style.border = `${config.styles.borderWidth} solid ${borderColor}`;
       chatInputElement.style.boxShadow = `0 0 5px ${borderColor}`;
+
+      // Show tooltip with warning
+      showPrivacyWarning();
     } else {
       chatInputElement.style.border = "";
       chatInputElement.style.boxShadow = "";
+
+      // Hide tooltip if it exists
+      hidePrivacyWarning();
     }
   }
 
@@ -582,8 +478,6 @@
         text: match.matchedText,
         maskedText: match.maskedText,
         position: `Line ${lineNumber}, Char ${charPosition}`,
-        index: match.index,
-        length: match.length,
       });
     });
 
@@ -609,16 +503,10 @@
       matches.forEach((match, index) => {
         hasMatches = true;
         // Safely escape HTML to prevent XSS
-        const safeText = match.text
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+        const safeText = match.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const safeMaskedText = match.maskedText
           .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+          .replace(/>/g, "&gt;");
         tableRowsHTML += `
           <tr class="privacy-warning-row">
             <td class="privacy-warning-cell">${index === 0 ? ruleName : ""}</td>
@@ -627,24 +515,6 @@
             )}, 0.3);">${safeText}</code></td>
             <td class="privacy-warning-cell"><code>${safeMaskedText}</code></td>
             <td class="privacy-warning-cell">${match.position}</td>
-            <td class="privacy-warning-cell">
-              ${
-                match.maskedText !== match.text
-                  ? `
-                <button class="undo-masking-btn icon-button" 
-                  data-index="${match.index}" 
-                  data-length="${match.length}" 
-                  data-original="${safeText}"
-                  title="Undo masking">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 7v6h6"></path>
-                    <path d="M3 13c0-4.97 4.03-9 9-9a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-6-2.3"></path>
-                  </svg>
-                </button>
-              `
-                  : ""
-              }
-            </td>
           </tr>
         `;
       });
@@ -660,7 +530,6 @@
               <th class="privacy-warning-header-cell">Original Text</th>
               <th class="privacy-warning-header-cell">Masked Text</th>
               <th class="privacy-warning-header-cell">Position</th>
-              <th class="privacy-warning-header-cell">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -677,47 +546,6 @@
 
     // Update the DOM with new content
     warningElement.innerHTML = headerHTML + contentHTML;
-
-    // Add click handlers for undo buttons
-    const undoButtons = warningElement.querySelectorAll(".undo-masking-btn");
-    undoButtons.forEach((button) => {
-      button.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const index = parseInt(button.dataset.index);
-        const length = parseInt(button.dataset.length);
-        const originalText = button.dataset.original
-          .replace(/&lt;/g, "<")
-          .replace(/&gt;/g, ">")
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'");
-
-        // Get the current text and cursor position
-        const currentText = chatInputElement.value;
-        const cursorPosition = chatInputElement.selectionStart;
-
-        // Replace the masked text with original text
-        const newText =
-          currentText.substring(0, index) +
-          originalText +
-          currentText.substring(index + length);
-
-        // Add this region to ignored regions
-        ignoredRegions.push({
-          start: index,
-          end: index + originalText.length,
-          text: originalText,
-        });
-
-        // Update the input
-        chatInputElement.value = newText;
-
-        // Restore cursor position
-        chatInputElement.setSelectionRange(cursorPosition, cursorPosition);
-
-        // Re-check for sensitive info to update UI
-        setTimeout(checkForSensitiveInfo, 0);
-      });
-    });
   }
 
   // Helper function to convert hex to RGB
@@ -2207,24 +2035,6 @@
       .privacy-warning-cell code {
         padding: 2px 4px;
         border-radius: 3px;
-      }
-
-      .privacy-warning-cell .undo-masking-btn {
-        opacity: 0.7;
-        color: #60a5fa;
-        padding: 2px;
-        border-radius: 3px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .privacy-warning-cell .undo-masking-btn:hover {
-        opacity: 1;
-        background-color: rgba(96, 165, 250, 0.1);
-      }
-
-      .privacy-warning-cell .undo-masking-btn svg {
-        vertical-align: middle;
       }
 
       .privacy-warning-no-matches {
