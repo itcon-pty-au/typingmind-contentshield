@@ -1147,7 +1147,7 @@
             : ""
         }>
           <label class="flex items-center">
-            <input type="checkbox" id="case-sensitive-input" class="mr-2" ${
+            <input type="checkbox" id="case-sensitive-input" class="mr-2" style="width: auto; appearance: auto; -webkit-appearance: auto; opacity: 1; position: static;" ${
               existingRule &&
               existingRule.type === "string" &&
               existingRule.caseSensitive
@@ -1160,7 +1160,7 @@
 
         <div class="form-group">
           <label class="flex items-center mb-2">
-            <input type="checkbox" id="masking-enabled" class="mr-2" ${
+            <input type="checkbox" id="masking-enabled" class="mr-2" style="width: auto; appearance: auto; -webkit-appearance: auto; opacity: 1; position: static;" ${
               existingRule?.masking?.enabled ? "checked" : ""
             }>
             <span>Enable Masking</span>
@@ -1199,7 +1199,7 @@
             }>
               <div class="form-group">
                 <label class="flex items-center">
-                  <input type="checkbox" id="preserve-length" class="mr-2" ${
+                  <input type="checkbox" id="preserve-length" class="mr-2" style="width: auto; appearance: auto; -webkit-appearance: auto; opacity: 1; position: static;" ${
                     existingRule?.masking?.preserveLength ? "checked" : ""
                   }>
                   <span>Preserve Original Length</span>
@@ -1208,7 +1208,7 @@
 
               <div class="form-group">
                 <label class="flex items-center">
-                  <input type="checkbox" id="preserve-format" class="mr-2" ${
+                  <input type="checkbox" id="preserve-format" class="mr-2" style="width: auto; appearance: auto; -webkit-appearance: auto; opacity: 1; position: static;" ${
                     existingRule?.masking?.preserveFormat ? "checked" : ""
                   }>
                   <span>Preserve Format (spaces, special characters)</span>
