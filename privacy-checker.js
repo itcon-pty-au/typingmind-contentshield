@@ -522,46 +522,24 @@
         const index = parseInt(cell.dataset.index);
         const length = parseInt(cell.dataset.length);
 
-        // Focus and select the text
+        // Focus the input and select the text
         chatInputElement.focus();
         chatInputElement.setSelectionRange(index, index + length);
 
-        // Create a temporary range to scroll the selection into view
+        // Create a temporary range to get the text node
         const range = document.createRange();
-        const textNode = chatInputElement.firstChild || chatInputElement;
-        range.setStart(textNode, index);
-        range.setEnd(textNode, index + length);
+        range.setStart(chatInputElement.firstChild || chatInputElement, index);
+        range.setEnd(
+          chatInputElement.firstChild || chatInputElement,
+          index + length
+        );
 
-        // Use scrollIntoView on the selected text
-        setTimeout(() => {
-          if (typeof chatInputElement.scrollIntoView === "function") {
-            chatInputElement.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-          }
-          // For textarea/input, also ensure the selection is visible
-          if (
-            chatInputElement.type === "textarea" ||
-            chatInputElement.type === "text"
-          ) {
-            const selectedText = chatInputElement.value.substring(
-              index,
-              index + length
-            );
-            const textBeforeSelection = chatInputElement.value.substring(
-              0,
-              index
-            );
-            const textAfterSelection = chatInputElement.value.substring(
-              index + length
-            );
-            chatInputElement.value =
-              textBeforeSelection + selectedText + textAfterSelection;
-            chatInputElement.setSelectionRange(index, index + length);
-            chatInputElement.scrollTop = chatInputElement.scrollHeight;
-          }
-        }, 0);
+        // Scroll the selected text into view with smooth behavior
+        range.getBoundingClientRect().toJSON(); // Force layout calculation
+        range.startContainer.parentElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       });
     });
   }
