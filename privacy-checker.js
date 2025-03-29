@@ -368,13 +368,14 @@
 
     // Update UI based on matches
     const hasMatches = activeMatches.length > 0;
-    updateChatInputStyle(hasMatches);
 
-    // Always show warning if there are matches, regardless of masking status
-    if (hasMatches) {
+    // Always show warning if there are matches in lastActiveMatches
+    if (lastActiveMatches.length > 0) {
       showPrivacyWarning();
+      updateChatInputStyle(true);
     } else {
       hidePrivacyWarning();
+      updateChatInputStyle(false);
     }
 
     // Update the input value with masked text if there are matches that should be masked
