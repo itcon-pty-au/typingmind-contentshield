@@ -194,6 +194,9 @@
       return;
     }
 
+    // Clear existing menu items before scanning
+    menuItems = {};
+
     // Get all buttons in their original order
     const buttons = menuBar.querySelectorAll("button");
 
@@ -218,6 +221,12 @@
     });
 
     console.log("Menu items found:", Object.keys(menuItems).length);
+
+    // Refresh the placement dropdown if it exists
+    const placementDropdown = document.getElementById("placement-reference");
+    if (placementDropdown) {
+      placementDropdown.innerHTML = generateMenuItemOptions();
+    }
   }
 
   // Save configuration to localStorage
@@ -974,6 +983,9 @@
   // Toggle the shield modal
   function togglePrivacyModal() {
     if (modalContainer.style.display === "none") {
+      // Rescan menu items before showing modal
+      scanMenuItems();
+
       // Show modal
       modalContainer.style.display = "flex";
 
