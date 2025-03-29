@@ -2387,8 +2387,8 @@
         <h3 class="modal-title text-red-500">Delete All Rules</h3>
       </div>
       <div class="modal-section">
-        <p class="text-white mb-4">Are you sure you want to delete all shield rules? This action cannot be undone.</p>
-        <p class="text-gray-400 text-sm mb-4">You might want to export your rules first as a backup.</p>
+        <p class="text-white mb-4">Are you sure you want to delete ALL ${config.rules.length} shield rules? This action cannot be undone.</p>
+        <p class="text-gray-400 text-sm mb-4">You might want to export your rules first as a backup. Note that the checkbox is for activating/deactivating rules, not for selectively deleting them.</p>
         <div class="flex justify-end space-x-2">
           <button id="cancel-delete-all" class="button button-secondary">Cancel</button>
           <button id="confirm-delete-all" class="button button-danger">Delete All Rules</button>
