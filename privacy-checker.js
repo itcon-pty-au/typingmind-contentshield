@@ -1441,14 +1441,6 @@
       "name",
       "active",
       "description",
-      "masking.enabled",
-      "masking.mode",
-      "masking.pattern",
-      "masking.preserveLength",
-      "masking.preserveFormat",
-      "masking.preserveStart",
-      "masking.preserveEnd",
-      "masking.fixedLength",
       "caseSensitive",
     ];
 
@@ -1463,14 +1455,6 @@
           rule.name,
           rule.active,
           rule.description || "",
-          rule.masking?.enabled || false,
-          rule.masking?.mode || "",
-          rule.masking?.pattern || "*",
-          rule.masking?.preserveLength || false,
-          rule.masking?.preserveFormat || false,
-          rule.masking?.preserveStart || 0,
-          rule.masking?.preserveEnd || 0,
-          rule.masking?.fixedLength || "",
           rule.caseSensitive || "",
         ].join("\t");
       }),
@@ -1531,27 +1515,9 @@
                 description: values[5],
               };
 
-              // Parse masking configuration
-              if (values[6] === "true") {
-                rule.masking = {
-                  enabled: true,
-                  mode: values[7],
-                  pattern: values[8] || "*",
-                };
-
-                if (values[7] === "direct_text") {
-                  rule.masking.preserveLength = values[9] === "true";
-                  rule.masking.preserveFormat = values[10] === "true";
-                  rule.masking.preserveStart = parseInt(values[11]) || 0;
-                  rule.masking.preserveEnd = parseInt(values[12]) || 0;
-                } else if (values[7] === "variable_value") {
-                  rule.masking.fixedLength = parseInt(values[13]) || 3;
-                }
-              }
-
               // Add caseSensitive for string type rules
               if (rule.type === "string") {
-                rule.caseSensitive = values[14] === "true";
+                rule.caseSensitive = values[6] === "true";
               }
 
               return rule;
