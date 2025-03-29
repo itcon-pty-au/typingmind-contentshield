@@ -8,7 +8,7 @@
 - Customizable privacy rules with support for:
   - String Match: Simple text matching with case sensitivity option
   - Regular Expression: Advanced pattern matching
-  - Variable Assignment: Specifically detect sensitive data in variable assignments
+  - Variable Assignment: Specifically detect sensitive data in variable assignments (e.g. password:"g5ssjfu74s6fgsh")
 - Visual highlighting of detected sensitive information with:
   - Modern dispersed glowing border effect
   - Customizable colors and intensity
