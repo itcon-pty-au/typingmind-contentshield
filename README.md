@@ -1,14 +1,14 @@
-# TypingMind Privacy Checker
+# TypingMind ContentShield
 
 <br/><div align="center">💗 <a href="https://buymeacoffee.com/itcon">If you found this useful, please consider buying me a coffee</a> 💗</div>
 
 ## Features
 
 - Real-time monitoring of chat input for potentially sensitive information
-- Customizable privacy rules with support for:
+- Customizable content rules with support for:
   - String Match: Simple text matching with case sensitivity option
   - Regular Expression: Advanced pattern matching
-  - Variable Assignment: Specifically detect sensitive data in variable assignments (e.g. password:"g5ssjfu74s6fgsh")
+  - Variable Assignment: Specifically detect sensitive data in variable assignments
 - Visual highlighting of detected sensitive information with:
   - Modern dispersed glowing border effect
   - Customizable colors and intensity
@@ -49,17 +49,17 @@
   <table>
     <tr>
       <td align="center">
-        <img src="screenshots/sample.PNG" alt="Privacy Checker detecting sensitive information" width="400"/><br/>
-        <em>Privacy Checker detecting sensitive information in real-time with glowing border effect and detailed tooltip</em>
+        <img src="screenshots/sample.PNG" alt="ContentShield detecting sensitive information" width="400"/><br/>
+        <em>ContentShield detecting sensitive information in real-time with glowing border effect and detailed tooltip</em>
       </td>
       <td align="center">
-        <img src="screenshots/config1.PNG" alt="Privacy Checker configuration panel" width="400"/><br/>
-        <em>Configuration panel showing privacy rules management with dynamic rule counter</em>
+        <img src="screenshots/config1.PNG" alt="ContentShield configuration panel" width="400"/><br/>
+        <em>Configuration panel showing content rules management with dynamic rule counter</em>
       </td>
     </tr>
     <tr>
       <td align="center">
-        <img src="screenshots/config2.PNG" alt="Privacy Checker styles" width="400"/><br/>
+        <img src="screenshots/config2.PNG" alt="ContentShield styles" width="400"/><br/>
         <em>Customizable appearance settings including colors, border effects, and keyboard shortcuts</em>
       </td>
       <td align="center">
@@ -82,11 +82,11 @@
 
 ## Using this extension
 
-1. Load `https://itcon-pty-au.github.io/typingmind-privacy-checker/privacy-checker.js` into Menu > Preferences > Extension in TypingMind.
-2. A new "Privacy" button will appear in the TypingMind sidebar.
-3. Click on the Privacy button to access the configuration panel where you can:
-   - Enable/disable the privacy checker
-   - Manage privacy rules (with rule count display)
+1. Load `https://itcon-pty-au.github.io/typingmind-contentshield/contentshield.js` into Menu > Preferences > Extension in TypingMind.
+2. A new "Shield" button will appear in the TypingMind sidebar.
+3. Click on the Shield button to access the configuration panel where you can:
+   - Enable/disable ContentShield
+   - Manage content rules (with rule count display)
    - Customize appearance settings
    - Import/export rule configurations
 4. Alternatively, you can use the keyboard shortcut (default: Shift+Alt+P) to open the configuration panel.
@@ -130,7 +130,7 @@ The extension comes with six predefined rules to detect common types of sensitiv
 
 ### Adding a new rule
 
-1. Open the Privacy configuration panel
+1. Open the ContentShield configuration panel
 2. Click "Add Rule"
 3. Provide the following details:
    - Rule Name - A descriptive name for the rule
@@ -160,29 +160,29 @@ Toggle the checkbox next to any rule to enable or disable it without deleting it
 
 ## Customizing Appearance
 
-1. Open the Privacy configuration panel
+1. Open the ContentShield configuration panel
 2. Click "Show" in the Appearance section
 3. Adjust:
    - Highlight Color - The color used for the glowing border effect
    - Border Width - Choose from Thin (1px) to Very Thick (4px)
    - Warning Header Color - The background color for the warning header
    - Menu & Keyboard Controls:
-     - Hide extension from menu - Option to remove the Privacy button from the sidebar
+     - Hide extension from menu - Option to remove the ContentShield button from the sidebar
      - Keyboard Shortcut - Set a custom keyboard combination to open the panel (required if extension is hidden from menu)
-   - Menu Icon Placement - Choose where to position the Privacy button in the sidebar
+   - Menu Icon Placement - Choose where to position the ContentShield button in the sidebar
 4. Click "Save Styles" to apply changes
 
 ## Importing and Exporting Rules
 
 ### Exporting rules
 
-1. Click the "Export" button in the Privacy configuration panel
+1. Click the "Export" button in the ContentShield configuration panel
 2. A TSV (Tab-Separated Values) file containing your rules will be downloaded
 3. The TSV format includes: id, type, pattern, name, active status, description, and case sensitivity
 
 ### Importing rules
 
-1. Click the "Import" button in the Privacy configuration panel
+1. Click the "Import" button in the ContentShield configuration panel
 2. Select a TSV file containing rules
 3. The system will:
    - Validate all rules (especially regex patterns)

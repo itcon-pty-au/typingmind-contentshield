@@ -1,4 +1,4 @@
-// TypingMind Privacy Checker Extension
+// TypingMind ContentShield Extension
 // This extension monitors chat input for potentially sensitive information
 
 (function () {
@@ -120,7 +120,7 @@
 
     // Setup menu button if enabled
     if (config.menuButton.show) {
-      setupPrivacyButton();
+      setupShieldButton();
     }
 
     // Setup keyboard shortcut listener
@@ -132,7 +132,7 @@
 
   // Load configuration from localStorage
   function loadConfig() {
-    const savedConfig = localStorage.getItem("typingMindPrivacyCheckerConfig");
+    const savedConfig = localStorage.getItem("typingMindContentShieldConfig");
     if (savedConfig) {
       try {
         const parsedConfig = JSON.parse(savedConfig);
@@ -168,7 +168,7 @@
           };
         }
       } catch (e) {
-        console.error("Failed to parse saved privacy checker config", e);
+        console.error("Failed to parse saved content shield config", e);
       }
     }
   }
@@ -208,23 +208,23 @@
   // Save configuration to localStorage
   function saveConfig() {
     localStorage.setItem(
-      "typingMindPrivacyCheckerConfig",
+      "typingMindContentShieldConfig",
       JSON.stringify(config)
     );
   }
 
-  // Setup the privacy button in the UI
-  function setupPrivacyButton() {
+  // Setup the shield button in the UI
+  function setupShieldButton() {
     // Remove existing button if present
     if (privacyButton && privacyButton.parentNode) {
       privacyButton.parentNode.removeChild(privacyButton);
     }
 
-    // Create the privacy button
+    // Create the shield button
     privacyButton = document.createElement("button");
     privacyButton.className =
       "min-w-[58px] sm:min-w-0 sm:aspect-auto aspect-square cursor-default h-12 md:h-[50px] flex-col justify-start items-start inline-flex focus:outline-0 focus:text-white w-full";
-    privacyButton.dataset.elementId = "workspace-tab-privacy";
+    privacyButton.dataset.elementId = "workspace-tab-shield";
     privacyButton.innerHTML = `
       <span class="text-white/70 hover:bg-white/20 self-stretch h-12 md:h-[50px] px-0.5 py-1.5 rounded-xl flex-col justify-start items-center gap-1.5 flex transition-colors">
         <svg class="w-4 h-4 flex-shrink-0" width="18px" height="18px" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
@@ -233,7 +233,7 @@
             <path d="M6.5,8.5L8.3,10.3L11.5,7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
           </g>
         </svg>
-        <span class="font-normal self-stretch text-center text-xs leading-4 md:leading-none">Privacy</span>
+        <span class="font-normal self-stretch text-center text-xs leading-4 md:leading-none">Shield</span>
       </span>
     `;
 
@@ -362,8 +362,8 @@
     if (!arraysEqual(lastActiveMatches, activeMatches)) {
       lastActiveMatches = activeMatches;
       // If warning is already showing, update it to reflect new matches
-      if (document.getElementById("privacy-warning-tooltip")) {
-        showPrivacyWarning();
+      if (document.getElementById("shield-warning-tooltip")) {
+        showShieldWarning();
       }
     }
   }
@@ -405,26 +405,26 @@
       chatInputElement.style.transition = "all 0.3s ease";
 
       // Show tooltip with warning
-      showPrivacyWarning();
+      showShieldWarning();
     } else {
       chatInputElement.style.border = "";
       chatInputElement.style.boxShadow = "";
       chatInputElement.style.transition = "all 0.3s ease";
 
       // Hide tooltip if it exists
-      hidePrivacyWarning();
+      hideShieldWarning();
     }
   }
 
-  // Show privacy warning tooltip
-  function showPrivacyWarning() {
-    let warningElement = document.getElementById("privacy-warning-tooltip");
+  // Show shield warning tooltip
+  function showShieldWarning() {
+    let warningElement = document.getElementById("shield-warning-tooltip");
     const container = chatInputElement.parentElement;
 
     if (!warningElement) {
       warningElement = document.createElement("div");
-      warningElement.id = "privacy-warning-tooltip";
-      warningElement.className = "privacy-warning-tooltip";
+      warningElement.id = "shield-warning-tooltip";
+      warningElement.className = "shield-warning-tooltip";
 
       if (container) {
         container.style.position = "relative";
@@ -456,14 +456,14 @@
 
     // Create header for the warning
     const headerHTML = `
-      <div class="privacy-warning-header" style="background-color: ${config.styles.warningHeaderBg};">
-        <div class="privacy-warning-title">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="privacy-warning-icon">
+      <div class="shield-warning-header" style="background-color: ${config.styles.warningHeaderBg};">
+        <div class="shield-warning-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shield-warning-icon">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-          Privacy Alert: Potentially Sensitive Information Detected
+          Shield Alert: Potentially Sensitive Information Detected
         </div>
       </div>
     `;
@@ -482,12 +482,12 @@
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
         tableRowsHTML += `
-          <tr class="privacy-warning-row">
-            <td class="privacy-warning-cell">${index === 0 ? ruleName : ""}</td>
-            <td class="privacy-warning-cell"><code style="background-color: rgba(${hexToRgb(
+          <tr class="shield-warning-row">
+            <td class="shield-warning-cell">${index === 0 ? ruleName : ""}</td>
+            <td class="shield-warning-cell"><code style="background-color: rgba(${hexToRgb(
               config.styles.highlightColor
             )}, 0.3);">${safeText}</code></td>
-            <td class="privacy-warning-cell position-cell" data-index="${
+            <td class="shield-warning-cell position-cell" data-index="${
               match.index
             }" data-length="${
           match.length
@@ -501,13 +501,13 @@
 
     // Build the content area with table
     const contentHTML = `
-      <div class="privacy-warning-content">
-        <table class="privacy-warning-table">
+      <div class="shield-warning-content">
+        <table class="shield-warning-table">
           <thead>
-            <tr class="privacy-warning-header-row">
-              <th class="privacy-warning-header-cell">Rule Name</th>
-              <th class="privacy-warning-header-cell">Detected Text</th>
-              <th class="privacy-warning-header-cell">Position</th>
+            <tr class="shield-warning-header-row">
+              <th class="shield-warning-header-cell">Rule Name</th>
+              <th class="shield-warning-header-cell">Detected Text</th>
+              <th class="shield-warning-header-cell">Position</th>
             </tr>
           </thead>
           <tbody>
@@ -516,7 +516,7 @@
         </table>
         ${
           !hasMatches
-            ? '<p class="privacy-warning-no-matches">No matches found</p>'
+            ? '<p class="shield-warning-no-matches">No matches found</p>'
             : ""
         }
       </div>
@@ -627,9 +627,9 @@
     return maskedText;
   }
 
-  // Hide privacy warning tooltip
-  function hidePrivacyWarning() {
-    const warningElement = document.getElementById("privacy-warning-tooltip");
+  // Hide shield warning tooltip
+  function hideShieldWarning() {
+    const warningElement = document.getElementById("shield-warning-tooltip");
     if (warningElement) {
       warningElement.remove();
     }
@@ -638,7 +638,7 @@
   // Create the modal container
   function setupModalContainer() {
     modalContainer = document.createElement("div");
-    modalContainer.id = "privacy-checker-modal-container";
+    modalContainer.id = "shield-checker-modal-container";
     modalContainer.style.display = "none";
 
     // Create the modal content
@@ -652,34 +652,34 @@
   // Create the modal content
   function createModalContent() {
     const modalContent = document.createElement("div");
-    modalContent.className = "privacy-checker-modal";
+    modalContent.className = "shield-checker-modal";
 
     // Add content to the modal
     modalContent.innerHTML = `
       <div class="modal-header">
-        <h3 class="modal-title">Privacy Checker</h3>
-        <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure privacy rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
+        <h3 class="modal-title">Shield Checker</h3>
+        <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure shield rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
       </div>
 
       <div class="modal-section">
         <div class="flex items-center justify-between">
-          <label class="modal-section-title">Enable Privacy Checker</label>
+          <label class="modal-section-title">Enable Shield Checker</label>
           <div class="relative inline-block w-10 mr-2 align-middle select-none">
-            <input type="checkbox" id="privacy-checker-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
+            <input type="checkbox" id="shield-checker-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
               config.enabled ? "checked" : ""
             }>
-            <label for="privacy-checker-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer"></label>
+            <label for="shield-checker-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-500 cursor-pointer"></label>
           </div>
         </div>
       </div>
 
       <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
-          <label id="privacy-rules-title" class="modal-section-title">Privacy Rules (${
+          <label id="shield-rules-title" class="modal-section-title">Shield Rules (${
             config.rules.length
           })</label>
           <div class="flex space-x-2">
-            <button id="delete-all-rules-btn" class="button button-danger" title="Delete all privacy rules">
+            <button id="delete-all-rules-btn" class="button button-danger" title="Delete all shield rules">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -695,7 +695,7 @@
             </button>
           </div>
         </div>
-        <div id="privacy-rules-list" class="space-y-2 max-h-[300px] overflow-y-auto">
+        <div id="shield-rules-list" class="space-y-2 max-h-[300px] overflow-y-auto">
           <!-- Rules will be populated here -->
         </div>
       </div>
@@ -762,10 +762,10 @@
                 <select id="menu-visibility" class="flex-grow">
                   <option value="show" ${
                     config.menuButton.show ? "selected" : ""
-                  }>Show Privacy menu</option>
+                  }>Show Shield menu</option>
                   <option value="hide" ${
                     !config.menuButton.show ? "selected" : ""
-                  }>Hide Privacy menu</option>
+                  }>Hide Shield menu</option>
                 </select>
               </div>
               
@@ -832,23 +832,23 @@
           Import
         </button>
         <div style="flex-grow: 1;"></div>
-        <button id="close-privacy-modal" class="button button-danger">Close</button>
+        <button id="close-shield-modal" class="button button-danger">Close</button>
       </div>
     `;
 
     // Store reference to the rules list
-    rulesList = modalContent.querySelector("#privacy-rules-list");
+    rulesList = modalContent.querySelector("#shield-rules-list");
 
     // Add event listeners
     modalContent.addEventListener("click", (e) => {
-      if (e.target.id === "close-privacy-modal") {
+      if (e.target.id === "close-shield-modal") {
         togglePrivacyModal();
       } else if (e.target.id === "add-rule-btn") {
         addNewRule();
       } else if (e.target.id === "delete-all-rules-btn") {
         deleteAllRules();
-      } else if (e.target.id === "privacy-checker-toggle") {
-        togglePrivacyChecker();
+      } else if (e.target.id === "shield-checker-toggle") {
+        toggleShieldChecker();
       } else if (e.target.id === "save-styles-btn") {
         saveStyleSettings();
       } else if (
@@ -945,13 +945,13 @@
     return options;
   }
 
-  // Toggle the privacy checker
-  function togglePrivacyChecker() {
+  // Toggle the shield checker
+  function toggleShieldChecker() {
     config.enabled = !config.enabled;
     saveConfig();
 
     // Update UI
-    const toggle = document.getElementById("privacy-checker-toggle");
+    const toggle = document.getElementById("shield-checker-toggle");
     if (toggle) {
       toggle.checked = config.enabled;
     }
@@ -960,7 +960,7 @@
     checkForSensitiveInfo();
   }
 
-  // Toggle the privacy modal
+  // Toggle the shield modal
   function togglePrivacyModal() {
     if (modalContainer.style.display === "none") {
       // Show modal
@@ -1008,9 +1008,9 @@
     rulesList.innerHTML = "";
 
     // Update the rules count in the title
-    const rulesTitle = document.querySelector("#privacy-rules-title");
+    const rulesTitle = document.querySelector("#shield-rules-title");
     if (rulesTitle) {
-      rulesTitle.textContent = `Privacy Rules (${config.rules.length})`;
+      rulesTitle.textContent = `Shield Rules (${config.rules.length})`;
     }
 
     // Add each rule
@@ -1138,7 +1138,7 @@
 
     // Create the editor content
     const editorContent = document.createElement("div");
-    editorContent.className = "privacy-checker-modal"; // Reuse main modal styles
+    editorContent.className = "shield-checker-modal"; // Reuse main modal styles
     editorContent.style.animation = "slideIn 0.3s ease-out";
 
     editorContent.innerHTML = `
@@ -1366,14 +1366,14 @@
       chatInputElement.style.boxShadow = `0 0 5px ${highlightColor}`;
 
       // Update warning header if visible
-      const warningHeader = document.querySelector(".privacy-warning-header");
+      const warningHeader = document.querySelector(".shield-warning-header");
       if (warningHeader) {
         warningHeader.style.backgroundColor = warningHeaderBg;
       }
 
       // Update highlighted text color in warnings
       const highlightedTexts = document.querySelectorAll(
-        ".privacy-warning-cell code"
+        ".shield-warning-cell code"
       );
       highlightedTexts.forEach((elem) => {
         elem.style.backgroundColor = `rgba(${hexToRgb(highlightColor)}, 0.3)`;
@@ -1443,10 +1443,10 @@
       // Add or remove menu button
       if (menuVisibility === "show") {
         if (!privacyButton || !privacyButton.parentNode) {
-          setupPrivacyButton();
+          setupShieldButton();
         } else if (placementChanged) {
           // Reposition existing button if placement changed
-          setupPrivacyButton();
+          setupShieldButton();
         }
       } else if (privacyButton && privacyButton.parentNode) {
         // Remove menu button if it should be hidden
@@ -1455,7 +1455,7 @@
       }
     } else if (placementChanged && menuVisibility === "show") {
       // Reposition button if placement changed and button is visible
-      setupPrivacyButton();
+      setupShieldButton();
     }
 
     // Show a success message
@@ -1509,7 +1509,7 @@
     // Create download link
     const downloadLink = document.createElement("a");
     downloadLink.href = url;
-    downloadLink.download = "privacy-checker-rules.tsv";
+    downloadLink.download = "typingmind-contentshield-rules.tsv";
 
     // Add to DOM, click it, and remove it
     document.body.appendChild(downloadLink);
@@ -1800,8 +1800,8 @@
         box-shadow: none;
       }
 
-      /* Privacy warning tooltip */
-      .privacy-warning-tooltip {
+      /* Shield warning tooltip */
+      .shield-warning-tooltip {
         position: absolute;
         top: 100%;
         left: 0;
@@ -1818,60 +1818,60 @@
         overflow: hidden;
       }
 
-      .privacy-warning-header {
+      .shield-warning-header {
         padding: 8px 12px;
         font-weight: bold;
         border-top-left-radius: 6px;
         border-top-right-radius: 6px;
       }
 
-      .privacy-warning-title {
+      .shield-warning-title {
         display: flex;
         align-items: center;
       }
 
-      .privacy-warning-icon {
+      .shield-warning-icon {
         margin-right: 8px;
       }
 
-      .privacy-warning-content {
+      .shield-warning-content {
         padding: 10px;
       }
 
-      .privacy-warning-table {
+      .shield-warning-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 12px;
       }
 
-      .privacy-warning-header-row {
+      .shield-warning-header-row {
         border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         text-align: left;
       }
 
-      .privacy-warning-header-cell {
+      .shield-warning-header-cell {
         padding: 5px;
       }
 
-      .privacy-warning-row {
+      .shield-warning-row {
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
 
-      .privacy-warning-cell {
+      .shield-warning-cell {
         padding: 5px;
       }
 
-      .privacy-warning-cell code {
+      .shield-warning-cell code {
         padding: 2px 4px;
         border-radius: 3px;
       }
 
-      .privacy-warning-no-matches {
+      .shield-warning-no-matches {
         text-align: center;
         margin: 10px 0;
       }
     
-      .privacy-warning {
+      .shield-warning {
         position: absolute;
         top: 100%;
         left: 0;
@@ -1885,7 +1885,7 @@
       }
       
       /* Modal styles */
-      #privacy-checker-modal-container {
+      #shield-checker-modal-container {
         position: fixed;
         top: 0;
         left: 0;
@@ -1903,7 +1903,7 @@
         animation: fadeIn 0.2s ease-out;
       }
 
-      .privacy-checker-modal {
+      .shield-checker-modal {
         display: inline-block;
         width: 100%;
         background-color: rgb(9, 9, 11);
@@ -2321,7 +2321,7 @@
   function deleteAllRules() {
     // Show confirmation dialog
     const confirmDialog = document.createElement("div");
-    confirmDialog.className = "privacy-checker-modal confirmation-dialog";
+    confirmDialog.className = "shield-checker-modal confirmation-dialog";
     confirmDialog.style.maxWidth = "24rem";
     confirmDialog.style.position = "relative";
     confirmDialog.style.zIndex = "100003"; // Higher than the main modal
@@ -2330,7 +2330,7 @@
         <h3 class="modal-title text-red-500">Delete All Rules</h3>
       </div>
       <div class="modal-section">
-        <p class="text-white mb-4">Are you sure you want to delete all privacy rules? This action cannot be undone.</p>
+        <p class="text-white mb-4">Are you sure you want to delete all shield rules? This action cannot be undone.</p>
         <p class="text-gray-400 text-sm mb-4">You might want to export your rules first as a backup.</p>
         <div class="flex justify-end space-x-2">
           <button id="cancel-delete-all" class="button button-secondary">Cancel</button>
@@ -2371,7 +2371,7 @@
       }
 
       // Show success message
-      const rulesSection = document.querySelector("#privacy-rules-title");
+      const rulesSection = document.querySelector("#shield-rules-title");
       const successMessage = document.createElement("div");
       successMessage.className = "text-green-500 text-sm ml-2 inline-block";
       successMessage.textContent = "All rules deleted";
