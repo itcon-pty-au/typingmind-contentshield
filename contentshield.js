@@ -194,23 +194,26 @@
       return;
     }
 
-    // Get all menu buttons
-    const buttons = menuBar.querySelectorAll(
-      'button[data-element-id^="workspace-tab-"]'
-    );
+    // Get all buttons in their original order
+    const buttons = menuBar.querySelectorAll("button");
 
     // Store each button's id and label text
     buttons.forEach((button) => {
-      const id = button.getAttribute("data-element-id");
+      const id =
+        button.getAttribute("data-element-id") ||
+        button.id ||
+        `menu-item-${Object.keys(menuItems).length}`;
       // Get text label (typically in a span inside the button)
       const labelSpan = button.querySelector("span span");
       const label = labelSpan
         ? labelSpan.textContent.trim()
-        : id.replace("workspace-tab-", "");
+        : button.textContent.trim() ||
+          id.replace(/^(workspace-tab-|menu-item-)/, "");
 
       menuItems[id] = {
         id,
         label,
+        order: Object.keys(menuItems).length, // Store the original order
       };
     });
 
@@ -939,9 +942,9 @@
   function generateMenuItemOptions() {
     let options = "";
 
-    // Sort menu items by label for easier selection
-    const sortedItems = Object.values(menuItems).sort((a, b) =>
-      a.label.localeCompare(b.label)
+    // Sort menu items by their original order
+    const sortedItems = Object.values(menuItems).sort(
+      (a, b) => a.order - b.order
     );
 
     sortedItems.forEach((item) => {
