@@ -1638,9 +1638,52 @@
 
           // Import rules - delta update (add new ones, don't replace existing)
           let addedCount = 0;
+          let skippedCount = 0;
 
           importedData.rules.forEach((importedRule) => {
-            // Check if rule exists by checking pattern and type (not just by name)
+            // Validate masking configuration if present
+            if (importedRule.masking) {
+              if (typeof importedRule.masking.enabled !== "boolean") {
+                console.warn(
+                  `Rule "${importedRule.name}": Invalid masking.enabled property`
+                );
+                skippedCount++;
+                return;
+              }
+              if (importedRule.masking.enabled) {
+                if (
+                  !["direct_text", "variable_value"].includes(
+                    importedRule.masking.mode
+                  )
+                ) {
+                  console.warn(
+                    `Rule "${importedRule.name}": Invalid masking.mode property`
+                  );
+                  skippedCount++;
+                  return;
+                }
+                if (typeof importedRule.masking.pattern !== "string") {
+                  importedRule.masking.pattern = "*"; // Set default if invalid
+                }
+
+                // Validate mode-specific properties
+                if (importedRule.masking.mode === "direct_text") {
+                  importedRule.masking.preserveLength =
+                    !!importedRule.masking.preserveLength;
+                  importedRule.masking.preserveFormat =
+                    !!importedRule.masking.preserveFormat;
+                  importedRule.masking.preserveStart =
+                    parseInt(importedRule.masking.preserveStart) || 0;
+                  importedRule.masking.preserveEnd =
+                    parseInt(importedRule.masking.preserveEnd) || 0;
+                } else if (importedRule.masking.mode === "variable_value") {
+                  importedRule.masking.fixedLength =
+                    parseInt(importedRule.masking.fixedLength) || 3;
+                }
+              }
+            }
+
+            // Check if rule exists
             const ruleExists = config.rules.some(
               (existingRule) =>
                 existingRule.type === importedRule.type &&
@@ -1649,7 +1692,6 @@
 
             // Add new rule if it doesn't exist
             if (!ruleExists) {
-              // Ensure the rule has a unique ID
               const newId = config.nextRuleId++;
               config.rules.push({
                 ...importedRule,
@@ -1666,8 +1708,14 @@
           // Re-check the current input for matches
           checkForSensitiveInfo();
 
-          // Show success message
-          alert(`Import complete. Added ${addedCount} new rules.`);
+          // Show success message with skipped rules info
+          const skipMessage =
+            skippedCount > 0
+              ? ` (${skippedCount} rules skipped due to invalid masking configuration)`
+              : "";
+          alert(
+            `Import complete. Added ${addedCount} new rules${skipMessage}.`
+          );
         } catch (error) {
           console.error("Import error:", error);
           alert(`Error importing rules: ${error.message}`);

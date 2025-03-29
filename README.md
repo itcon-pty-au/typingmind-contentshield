@@ -7,7 +7,23 @@
 - Real-time monitoring of chat input for potentially sensitive information
 - Customizable privacy rules with both string matching and regular expression support
 - Visual highlighting of detected sensitive information in the chat input
-- Detailed warning tooltip showing exactly what sensitive content was detected and where
+- Intelligent masking of sensitive information with multiple masking modes:
+  - Direct Text Masking: Replace sensitive content with customizable mask characters
+  - Variable Value Masking: Specifically mask values in variable assignments
+- Masking configuration options:
+  - Custom masking character (default: \*)
+  - Preserve original text length
+  - Preserve text format (spaces and special characters)
+  - Preserve specific number of characters at start/end
+  - Fixed-length masking for variables
+- Visual feedback for masked content:
+  - Green border indicates successfully masked content
+  - Red border indicates detected but unmasked sensitive content
+- Detailed warning tooltip showing:
+  - Rule that detected the content
+  - Original sensitive text
+  - Masked version of the text
+  - Position of the detected content
 - Built-in default rules for common sensitive data types:
   - Credit Card Numbers
   - Email Addresses
@@ -60,9 +76,16 @@ The extension comes with several predefined rules to detect common types of sens
 2. Click "Add Rule"
 3. Provide the following details:
    - Rule Name - A descriptive name for the rule
-   - Rule Type - Choose between "String Match" or "Regular Expression"
+   - Rule Type - Choose between "String Match", "Regular Expression", or "Variable Assignment"
    - Pattern - The text pattern to detect
    - Case Sensitive (for String Match only) - Toggle if the match should be case-sensitive
+   - Masking Options:
+     - Enable Masking - Toggle to enable automatic masking of matched content
+     - Masking Mode - Choose between "Mask Entire Text" or "Mask Variable Value"
+     - Masking Character - Custom character to use for masking (default: \*)
+     - Additional options based on selected mode:
+       - For Direct Text: preserve length, format, start/end characters
+       - For Variable Values: fixed mask length
 
 ### Editing a rule
 
@@ -118,13 +141,20 @@ Toggle the checkbox next to any rule to enable or disable it without deleting it
 
 The extension monitors chat input in real-time, scanning for patterns defined in your active rules. When sensitive information is detected:
 
-1. The chat input field is highlighted with a colored border
+1. The chat input field is highlighted with a colored border:
+   - Red border: Sensitive information detected (unmasked)
+   - Green border: Sensitive information detected and masked
 2. A detailed tooltip appears showing:
    - Which rules were triggered
-   - The exact text that matched
+   - The original sensitive text
+   - The masked version of the text
    - The location (line and character position) of each match
+3. If masking is enabled for the matched rule:
+   - The sensitive text is automatically replaced with masked characters
+   - The masking preserves the specified format and length settings
+   - The original text remains visible in the warning tooltip for verification
 
-This visual feedback helps you identify and avoid sharing sensitive information in your conversations.
+This visual feedback helps you identify sensitive information and verify that it's being properly masked before sending your messages.
 
 ## Privacy and Security
 
