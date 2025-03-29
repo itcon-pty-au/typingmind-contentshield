@@ -1,5 +1,25 @@
 # TypingMind ContentShield
 
+## Table of Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Using this extension](#using-this-extension)
+- [Default Rules](#default-rules)
+- [Managing Rules](#managing-rules)
+  - [Adding a new rule](#adding-a-new-rule)
+  - [Editing a rule](#editing-a-rule)
+  - [Deleting rules](#deleting-rules)
+  - [Enabling/disabling rules](#enablingdisabling-rules)
+- [Customizing Appearance](#customizing-appearance)
+- [Importing and Exporting Rules](#importing-and-exporting-rules)
+  - [Exporting rules](#exporting-rules)
+  - [Importing rules](#importing-rules)
+- [How It Works](#how-it-works)
+- [Privacy and Security](#privacy-and-security)
+- [About me](#about-me)
+- [License](#license)
+
 <br/><div align="center">💗 <a href="https://buymeacoffee.com/itcon">If you found this useful, please consider buying me a coffee</a> 💗</div>
 
 ## Features
