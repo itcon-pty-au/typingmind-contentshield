@@ -46,14 +46,38 @@
 ## Screenshots
 
 <div align="center">
-  <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-    <img src="screenshots/sample.PNG" alt="Privacy Checker detecting sensitive information" width="600"/>
-    <img src="screenshots/config1.PNG" alt="Privacy Checker configuration panel" width="600"/>
-    <img src="screenshots/config2.PNG" alt="Privacy Checker styles" width="600"/>
-    <img src="screenshots/rule-management-regex.PNG" alt="Regex rule to match string patterns" width="600"/>
-    <img src="screenshots/rule-management-string.PNG" alt="Simple string matching" width="600"/>
-    <img src="screenshots/rule-management-variable.PNG" alt="Regex rule to identify variable assignments" width="600"/>
-  </div>
+  <table>
+    <tr>
+      <td align="center">
+        <img src="screenshots/sample.PNG" alt="Privacy Checker detecting sensitive information" width="400"/><br/>
+        <em>Privacy Checker detecting sensitive information in real-time with glowing border effect and detailed tooltip</em>
+      </td>
+      <td align="center">
+        <img src="screenshots/config1.PNG" alt="Privacy Checker configuration panel" width="400"/><br/>
+        <em>Configuration panel showing privacy rules management with dynamic rule counter</em>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="screenshots/config2.PNG" alt="Privacy Checker styles" width="400"/><br/>
+        <em>Customizable appearance settings including colors, border effects, and keyboard shortcuts</em>
+      </td>
+      <td align="center">
+        <img src="screenshots/rule-management-regex.PNG" alt="Regex rule to match string patterns" width="400"/><br/>
+        <em>Adding a Regular Expression rule with real-time pattern validation</em>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="screenshots/rule-management-string.PNG" alt="Simple string matching" width="400"/><br/>
+        <em>Simple string matching rule with case sensitivity option</em>
+      </td>
+      <td align="center">
+        <img src="screenshots/rule-management-variable.PNG" alt="Regex rule to identify variable assignments" width="400"/><br/>
+        <em>Variable Assignment rule for detecting sensitive data in code</em>
+      </td>
+    </tr>
+  </table>
 </div>
 
 ## Using this extension
