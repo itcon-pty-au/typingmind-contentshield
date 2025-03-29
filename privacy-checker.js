@@ -1033,6 +1033,10 @@
               ? `<br>Case Sensitive: ${rule.caseSensitive ? "Yes" : "No"}`
               : ""
           }
+          <br>
+          Masking: <span class="masking-indicator ${
+            rule.masking?.enabled ? "masking-enabled" : "masking-disabled"
+          }">${rule.masking?.enabled ? "Yes" : "No"}</span>
         </div>
       `;
 
@@ -2420,6 +2424,25 @@
         word-break: break-all;
         white-space: normal;
         display: inline-block;
+      }
+
+      .masking-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+      }
+
+      .masking-enabled {
+        background-color: rgba(34, 197, 94, 0.2);
+        color: rgb(34, 197, 94);
+      }
+
+      .masking-disabled {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: rgb(239, 68, 68);
       }
 
       /* Style content transitions */
