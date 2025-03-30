@@ -112,7 +112,7 @@
     },
     menuButton: {
       show: true,
-      shortcut: "Shift+Alt+P",
+      shortcut: "Shift+Alt+S",
     },
   };
 
@@ -209,7 +209,7 @@
         if (parsedConfig.menuButton) {
           config.menuButton = {
             show: parsedConfig.menuButton.show ?? true,
-            shortcut: parsedConfig.menuButton.shortcut ?? "Shift+Alt+P",
+            shortcut: parsedConfig.menuButton.shortcut ?? "Shift+Alt+S",
           };
         }
       } catch (e) {
@@ -752,13 +752,13 @@
     // Add content to the modal
     modalContent.innerHTML = `
       <div class="modal-header">
-        <h3 class="modal-title">Shield Checker</h3>
+        <h3 class="modal-title">Content Shield</h3>
         <button class="ml-2 text-blue-400 text-lg hint--bottom-left hint--rounded hint--large" aria-label="Configure shield rules to detect sensitive information in chat messages. The extension will highlight potentially sensitive information with a red border around the chat input.">ⓘ</button>
       </div>
 
       <div class="modal-section">
         <div class="flex items-center justify-between">
-          <label class="modal-section-title">Enable Shield Checker</label>
+          <label class="modal-section-title">Enable Content Shield</label>
           <div class="relative inline-block w-10 mr-2 align-middle select-none">
             <input type="checkbox" id="shield-checker-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${
               config.enabled ? "checked" : ""
@@ -770,7 +770,7 @@
 
       <div class="modal-section">
         <div class="flex items-center justify-between mb-2">
-          <label id="shield-rules-title" class="modal-section-title">Shield Rules (${
+          <label id="shield-rules-title" class="modal-section-title">Content Shield Rules (${
             config.rules.length
           })</label>
           <div class="flex space-x-2">
