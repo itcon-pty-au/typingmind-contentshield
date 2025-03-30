@@ -203,7 +203,7 @@ Toggle the checkbox next to any rule to enable or disable it without deleting it
 ### Importing rules
 
 1. Click the "Import" button in the ContentShield configuration panel
-2. Select a TSV file containing rules
+2. Select a TSV file containing rules (<a href="https://github.com/itcon-pty-au/typingmind-contentshield/blob/main/typingmind-contentshield-rules.tsv">Here is a comprehensive rule set for importing </a>)
 3. The system will:
    - Validate all rules (especially regex patterns)
    - Skip any invalid rules
