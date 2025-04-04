@@ -372,27 +372,43 @@
   // Setup monitoring for the chat input field
   function setupChatMonitoring() {
     // Find the chat input element
+    console.log("ContentShield: Attempting to find chat input element...");
     chatInputElement = document.querySelector(
       '#chat-input-textbox, [data-element-id="chat-input-textbox"]'
     );
     if (!chatInputElement) {
+      console.log(
+        "ContentShield: Chat input element not found, retrying in 1 second..."
+      );
       // Try again in a second - the element might not be loaded yet
       setTimeout(setupChatMonitoring, 1000);
       return;
     }
 
+    console.log("ContentShield: Chat input element found:", chatInputElement);
+
     // Add input event listener to check content in real-time
+    console.log("ContentShield: Attaching input event listener...");
     chatInputElement.addEventListener("input", checkForSensitiveInfo);
+    console.log("ContentShield: Input event listener attached.");
 
     // Also check when the page loads
+    console.log("ContentShield: Performing initial check...");
     checkForSensitiveInfo();
   }
 
   // Check if the text contains sensitive information based on rules
   function checkForSensitiveInfo() {
-    if (!config.enabled || !chatInputElement) return;
+    // Add a check to see if the listener is firing
+    //console.log("ContentShield: Input event triggered (checkForSensitiveInfo running).");
+
+    if (!config.enabled || !chatInputElement) {
+      //console.log("ContentShield: Check skipped (disabled or input element missing).", { enabled: config.enabled, inputElementExists: !!chatInputElement });
+      return;
+    }
 
     const text = chatInputElement.value;
+    //console.log('ContentShield: Checking text:', text.substring(0, 50) + (text.length > 50 ? "..." : "")); // Log only first 50 chars
     const activeMatches = [];
 
     // Check each active rule
@@ -447,10 +463,13 @@
       activeMatches.push(...matches);
     });
 
+    //console.log("ContentShield: Matches found:", activeMatches.length, activeMatches);
+
     // Sort matches by index to handle overlapping matches
     activeMatches.sort((a, b) => a.index - b.index);
 
     // Update UI based on matches
+    //console.log("ContentShield: Calling updateChatInputStyle with hasSensitiveInfo:", activeMatches.length > 0);
     updateChatInputStyle(activeMatches.length > 0);
 
     // Only update if matches have changed
@@ -484,6 +503,8 @@
   // Update the chat input style based on whether sensitive info was detected
   function updateChatInputStyle(hasSensitiveInfo) {
     if (!chatInputElement) return;
+
+    //console.log("ContentShield: updateChatInputStyle called with hasSensitiveInfo:", hasSensitiveInfo);
 
     if (hasSensitiveInfo) {
       const color = config.styles.highlightColor;
