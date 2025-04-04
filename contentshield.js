@@ -745,9 +745,13 @@
 
   // Hide shield warning tooltip
   function hideShieldWarning() {
+    console.log("ContentShield: hideShieldWarning called");
     const warningElement = document.getElementById("shield-warning-tooltip");
     if (warningElement) {
+      console.log("ContentShield: Found warning element, removing it.");
       warningElement.remove();
+    } else {
+      console.log("ContentShield: Warning element not found.");
     }
   }
 
