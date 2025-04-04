@@ -395,7 +395,10 @@
     // Add MutationObserver to detect programmatic changes (like clearing after submit)
     //console.log("ContentShield: Setting up MutationObserver for input element...");
     const observer = new MutationObserver((mutations) => {
-      //console.log("ContentShield: MutationObserver detected change:", mutations);
+      console.log(
+        "ContentShield: MutationObserver detected change:",
+        mutations
+      );
       checkForSensitiveInfo(); // Re-check whenever the input changes
     });
 
@@ -416,7 +419,9 @@
   // Check if the text contains sensitive information based on rules
   function checkForSensitiveInfo() {
     // Add a check to see if the listener is firing
-    //console.log("ContentShield: Input event triggered (checkForSensitiveInfo running).");
+    console.log(
+      "ContentShield: Input event triggered (checkForSensitiveInfo running)."
+    );
 
     if (!config.enabled || !chatInputElement) {
       //console.log("ContentShield: Check skipped (disabled or input element missing).", { enabled: config.enabled, inputElementExists: !!chatInputElement });
@@ -424,7 +429,10 @@
     }
 
     const text = chatInputElement.value;
-    //console.log('ContentShield: Checking text:', text.substring(0, 50) + (text.length > 50 ? "..." : "")); // Log only first 50 chars
+    console.log(
+      "ContentShield: Checking text:",
+      text.substring(0, 50) + (text.length > 50 ? "..." : "")
+    ); // Log only first 50 chars
     const activeMatches = [];
 
     // Check each active rule
@@ -479,7 +487,11 @@
       activeMatches.push(...matches);
     });
 
-    //console.log("ContentShield: Matches found:", activeMatches.length, activeMatches);
+    console.log(
+      "ContentShield: Matches found:",
+      activeMatches.length,
+      activeMatches
+    );
 
     // Sort matches by index to handle overlapping matches
     activeMatches.sort((a, b) => a.index - b.index);
