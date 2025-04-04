@@ -1,8 +1,4 @@
-// TypingMind ContentShield Extension
-// This extension monitors chat input for potentially sensitive information
-
 (function () {
-  // Configuration and state
   const config = {
     enabled: true,
     rules: [
@@ -116,7 +112,6 @@
     },
   };
 
-  // DOM Elements
   let chatInputElement = null;
   let privacyButton = null;
   let modalContainer = null;
@@ -125,35 +120,28 @@
   let menuItems = {};
   let ignoredRegions = [];
 
-  // Initialize the extension
   function init() {
     loadConfig();
 
-    // Wait for DOM to be fully loaded and a short delay to ensure dynamic content is loaded
     const initializeExtension = () => {
       console.log("Initializing ContentShield extension...");
 
-      // Initial scan of menu items
       scanMenuItems();
 
-      // Setup menu button if enabled
       if (config.menuButton.show) {
         setupShieldButton();
       }
 
-      // Setup keyboard shortcut listener
       setupKeyboardShortcut();
 
       setupChatMonitoring();
       setupModalContainer();
 
-      // Add a mutation observer to detect when new buttons are added
       const menuBar = document.querySelector(
         '[data-element-id="workspace-bar"]'
       );
       if (menuBar) {
         const observer = new MutationObserver((mutations) => {
-          //console.log("Menu bar mutation detected");
           scanMenuItems();
         });
 
@@ -164,29 +152,25 @@
       }
     };
 
-    // If document is already loaded, initialize with a delay
     if (document.readyState === "complete") {
       setTimeout(initializeExtension, 1000);
     } else {
-      // Otherwise wait for load event
       window.addEventListener("load", () =>
         setTimeout(initializeExtension, 1000)
       );
     }
   }
 
-  // Load configuration from localStorage
   function loadConfig() {
     const savedConfig = localStorage.getItem("typingMindContentShieldConfig");
     if (savedConfig) {
       try {
         const parsedConfig = JSON.parse(savedConfig);
-        // Merge with default config
+
         config.enabled = parsedConfig.enabled ?? config.enabled;
         config.rules = parsedConfig.rules ?? config.rules;
         config.nextRuleId = parsedConfig.nextRuleId ?? config.nextRuleId;
 
-        // Load styles with defaults if not present
         if (parsedConfig.styles) {
           config.styles = {
             highlightColor: parsedConfig.styles.highlightColor ?? "#ff0000",
@@ -195,7 +179,6 @@
           };
         }
 
-        // Load placement settings
         if (parsedConfig.placement) {
           config.placement = {
             position: parsedConfig.placement.position ?? "before",
@@ -205,7 +188,6 @@
           };
         }
 
-        // Load menu button settings
         if (parsedConfig.menuButton) {
           config.menuButton = {
             show: parsedConfig.menuButton.show ?? true,
@@ -218,43 +200,30 @@
     }
   }
 
-  // Scan menu items to populate dropdown options
   function scanMenuItems() {
     const menuBar = document.querySelector('[data-element-id="workspace-bar"]');
     if (!menuBar) {
-      // Try again in a second if menu bar isn't loaded yet
-      //console.log("Menu bar not found, retrying in 1 second...");
       setTimeout(scanMenuItems, 1000);
       return;
     }
 
-    // Clear existing menu items before scanning
     menuItems = {};
 
-    // Get all buttons
     const buttons = menuBar.querySelectorAll("button");
     let foundSettings = false;
     let order = 0;
 
-    //console.log("Found buttons:", buttons.length);
-
-    // Store each button's id and label text up to Settings button
     for (const button of buttons) {
       const id =
         button.getAttribute("data-element-id") ||
         button.id ||
         `menu-item-${order}`;
-      //console.log("Processing button:", id);
 
-      // Skip our own Shield button
       if (id === "workspace-tab-shield") {
-        //console.log("Skipping Shield button");
         continue;
       }
 
-      // Stop scanning after Settings button
       if (id === "workspace-tab-settings") {
-        // Include Settings button
         const labelSpan = button.querySelector("span span");
         const label = labelSpan
           ? labelSpan.textContent.trim()
@@ -267,11 +236,10 @@
           order: order,
         };
         foundSettings = true;
-        //console.log("Found Settings button, stopping scan");
+
         break;
       }
 
-      // Get text label (typically in a span inside the button)
       const labelSpan = button.querySelector("span span");
       const label = labelSpan
         ? labelSpan.textContent.trim()
@@ -290,17 +258,12 @@
       console.warn("Settings button not found in menu bar");
     }
 
-    //console.log("Menu items found:", Object.keys(menuItems).length);
-    //console.log("Menu items:", menuItems);
-
-    // Refresh the placement dropdown if it exists
     const placementDropdown = document.getElementById("placement-reference");
     if (placementDropdown) {
       placementDropdown.innerHTML = generateMenuItemOptions();
     }
   }
 
-  // Save configuration to localStorage
   function saveConfig() {
     localStorage.setItem(
       "typingMindContentShieldConfig",
@@ -308,14 +271,11 @@
     );
   }
 
-  // Setup the shield button in the UI
   function setupShieldButton() {
-    // Remove existing button if present
     if (privacyButton && privacyButton.parentNode) {
       privacyButton.parentNode.removeChild(privacyButton);
     }
 
-    // Create the shield button
     privacyButton = document.createElement("button");
     privacyButton.className =
       "min-w-[58px] sm:min-w-0 sm:aspect-auto aspect-square cursor-default h-12 md:h-[50px] flex-col justify-start items-start inline-flex focus:outline-0 focus:text-white w-full";
@@ -332,7 +292,6 @@
       </span>
     `;
 
-    // Get reference element
     const position = config.placement.position;
     const refElementId = config.placement.referenceElement;
     const referenceElement = document.querySelector(
@@ -341,7 +300,7 @@
 
     if (!referenceElement) {
       console.error(`Reference element with ID ${refElementId} not found`);
-      // Fallback to appending to the workspace bar
+
       const workspaceBar = document.querySelector(
         '[data-element-id="workspace-bar"]'
       );
@@ -351,7 +310,6 @@
       return;
     }
 
-    // Insert before or after the reference element
     if (position === "before") {
       referenceElement.parentNode.insertBefore(privacyButton, referenceElement);
     } else {
@@ -361,81 +319,46 @@
       );
     }
 
-    // Add click event listener
     privacyButton.addEventListener("click", (e) => {
       togglePrivacyModal();
-      // Prevent event propagation to other event handlers
+
       e.stopPropagation();
     });
   }
 
-  // Setup monitoring for the chat input field
   function setupChatMonitoring() {
-    // Find the chat input element
-    //console.log("ContentShield: Attempting to find chat input element...");
     chatInputElement = document.querySelector(
       '#chat-input-textbox, [data-element-id="chat-input-textbox"]'
     );
     if (!chatInputElement) {
-      //console.log(
-      //  "ContentShield: Chat input element not found, retrying in 1 second..."
-      //);
-      // Try again in a second - the element might not be loaded yet
       setTimeout(setupChatMonitoring, 1000);
       return;
     }
 
-    //console.log("ContentShield: Chat input element found:", chatInputElement);
-
-    // Add input event listener for direct user input
-    //console.log("ContentShield: Attaching input event listener...");
     chatInputElement.addEventListener("input", checkForSensitiveInfo);
-    //console.log("ContentShield: Input event listener attached.");
 
-    // Add MutationObserver to detect programmatic changes (like clearing after submit)
-    //console.log("ContentShield: Setting up MutationObserver for input element...");
     const observer = new MutationObserver((mutations) => {
-      // console.log(
-      //   "ContentShield: MutationObserver detected change:",
-      //   mutations
-      // );
-      checkForSensitiveInfo(); // Re-check whenever the input changes
+      checkForSensitiveInfo();
     });
 
-    // Observe changes to the input's value (character data) and structure
     observer.observe(chatInputElement, {
-      childList: true, // For changes in child nodes (e.g., text node)
-      subtree: true, // Include descendants
-      characterData: true, // For changes in text content
-      // We don't strictly need 'attributes' or 'attributeOldValue' for value changes
+      childList: true,
+      subtree: true,
+      characterData: true,
     });
-    //console.log("ContentShield: MutationObserver is now observing the input element.");
 
-    // Also check when the page loads
-    //console.log("ContentShield: Performing initial check...");
     checkForSensitiveInfo();
   }
 
-  // Check if the text contains sensitive information based on rules
   function checkForSensitiveInfo() {
-    // Add a check to see if the listener is firing
-    // console.log(
-    //   "ContentShield: Input event triggered (checkForSensitiveInfo running)."
-    // );
-
     if (!config.enabled || !chatInputElement) {
-      //console.log("ContentShield: Check skipped (disabled or input element missing).", { enabled: config.enabled, inputElementExists: !!chatInputElement });
       return;
     }
 
     const text = chatInputElement.value;
-    // console.log(
-    //   "ContentShield: Checking text:",
-    //   text.substring(0, 50) + (text.length > 50 ? "..." : "")
-    // ); // Log only first 50 chars
+
     const activeMatches = [];
 
-    // Check each active rule
     config.rules.forEach((rule) => {
       if (!rule.active) return;
 
@@ -464,7 +387,6 @@
           ? rule.pattern
           : rule.pattern.toLowerCase();
 
-        // Use indexOf to find all occurrences
         let index = searchText.indexOf(searchPattern);
         while (index !== -1) {
           const matchedText = text.substring(
@@ -487,34 +409,22 @@
       activeMatches.push(...matches);
     });
 
-    // console.log(
-    //   "ContentShield: Matches found:",
-    //   activeMatches.length,
-    //   activeMatches
-    // );
-
-    // Sort matches by index to handle overlapping matches
     activeMatches.sort((a, b) => a.index - b.index);
 
-    // Update UI based on matches
-    //console.log("ContentShield: Calling updateChatInputStyle with hasSensitiveInfo:", activeMatches.length > 0);
     updateChatInputStyle(activeMatches.length > 0);
 
-    // Only update if matches have changed
     if (!arraysEqual(lastActiveMatches, activeMatches)) {
       lastActiveMatches = activeMatches;
-      // If warning is already showing, update it to reflect new matches
+
       if (document.getElementById("shield-warning-tooltip")) {
         showShieldWarning();
       }
     }
   }
 
-  // Helper function to compare arrays of matches
   function arraysEqual(arr1, arr2) {
     if (arr1.length !== arr2.length) return false;
 
-    // Sort both arrays to ensure consistent comparison
     const sorted1 = [...arr1].sort((a, b) => a.index - b.index);
     const sorted2 = [...arr2].sort((a, b) => a.index - b.index);
 
@@ -528,11 +438,8 @@
     });
   }
 
-  // Update the chat input style based on whether sensitive info was detected
   function updateChatInputStyle(hasSensitiveInfo) {
     if (!chatInputElement) return;
-
-    //console.log("ContentShield: updateChatInputStyle called with hasSensitiveInfo:", hasSensitiveInfo);
 
     if (hasSensitiveInfo) {
       const color = config.styles.highlightColor;
@@ -548,19 +455,16 @@
       `;
       chatInputElement.style.transition = "all 0.3s ease";
 
-      // Show tooltip with warning
       showShieldWarning();
     } else {
       chatInputElement.style.border = "";
       chatInputElement.style.boxShadow = "";
       chatInputElement.style.transition = "all 0.3s ease";
 
-      // Hide tooltip if it exists
       hideShieldWarning();
     }
   }
 
-  // Show shield warning tooltip
   function showShieldWarning() {
     let warningElement = document.getElementById("shield-warning-tooltip");
     const container = chatInputElement.parentElement;
@@ -576,20 +480,17 @@
       }
     }
 
-    // Organize matches by rule and determine positions
     const matchesByRule = {};
     lastActiveMatches.forEach((match) => {
       if (!matchesByRule[match.ruleName]) {
         matchesByRule[match.ruleName] = [];
       }
 
-      // Calculate line and character position
       const textBeforeMatch = chatInputElement.value.substring(0, match.index);
       const lines = textBeforeMatch.split("\n");
       const lineNumber = lines.length;
       const charPosition = lines[lines.length - 1].length + 1;
 
-      // Add match with position info
       matchesByRule[match.ruleName].push({
         text: match.matchedText,
         position: `Line ${lineNumber}, Char ${charPosition}`,
@@ -598,7 +499,6 @@
       });
     });
 
-    // Create header for the warning
     const headerHTML = `
       <div class="shield-warning-header" style="background-color: ${config.styles.warningHeaderBg};">
         <div class="shield-warning-title">
@@ -612,14 +512,13 @@
       </div>
     `;
 
-    // Start building table rows
     let tableRowsHTML = "";
     let hasMatches = false;
 
     Object.entries(matchesByRule).forEach(([ruleName, matches]) => {
       matches.forEach((match, index) => {
         hasMatches = true;
-        // Safely escape HTML to prevent XSS
+
         const safeText = match.text
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")
@@ -643,7 +542,6 @@
       });
     });
 
-    // Build the content area with table
     const contentHTML = `
       <div class="shield-warning-content">
         <table class="shield-warning-table">
@@ -666,10 +564,8 @@
       </div>
     `;
 
-    // Update the DOM with new content
     warningElement.innerHTML = headerHTML + contentHTML;
 
-    // Add click handlers for position cells
     const positionCells = warningElement.querySelectorAll(".position-cell");
     positionCells.forEach((cell) => {
       cell.addEventListener("click", (e) => {
@@ -677,25 +573,20 @@
         const index = parseInt(cell.dataset.index);
         const length = parseInt(cell.dataset.length);
 
-        // Focus the input and select the text
         chatInputElement.focus();
         chatInputElement.setSelectionRange(index, index + length);
 
-        // Get the text content up to the selection start
         const textBeforeSelection = chatInputElement.value.substring(0, index);
         const lines = textBeforeSelection.split("\n");
 
-        // Calculate the line height (approximately)
         const computedStyle = window.getComputedStyle(chatInputElement);
         const lineHeight =
           parseInt(computedStyle.lineHeight) ||
           parseInt(computedStyle.fontSize) * 1.2;
 
-        // Calculate the scroll position
         const targetLine = lines.length - 1;
         const scrollPosition = targetLine * lineHeight;
 
-        // Scroll to the position with some padding
         chatInputElement.scrollTop = Math.max(
           0,
           scrollPosition - lineHeight * 2
@@ -704,12 +595,9 @@
     });
   }
 
-  // Helper function to convert hex to RGB
   function hexToRgb(hex) {
-    // Remove # if present
     hex = hex.replace("#", "");
 
-    // Parse the hex values
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
@@ -717,7 +605,6 @@
     return `${r}, ${g}, ${b}`;
   }
 
-  // Masking utility functions
   function maskText(text, rule) {
     if (!rule.masking || !rule.masking.enabled) {
       return text;
@@ -745,7 +632,6 @@
 
   function maskDirectText(text, rule) {
     if (rule.masking.preserveFormat) {
-      // Preserve formatting (spaces, special characters)
       return text.replace(/\S/g, rule.masking.pattern || "*");
     }
 
@@ -771,7 +657,6 @@
     return maskedText;
   }
 
-  // Hide shield warning tooltip
   function hideShieldWarning() {
     const warningElement = document.getElementById("shield-warning-tooltip");
     if (warningElement) {
@@ -779,26 +664,21 @@
     }
   }
 
-  // Create the modal container
   function setupModalContainer() {
     modalContainer = document.createElement("div");
     modalContainer.id = "shield-checker-modal-container";
     modalContainer.style.display = "none";
 
-    // Create the modal content
     const modalContent = createModalContent();
     modalContainer.appendChild(modalContent);
 
-    // Add the modal to the body
     document.body.appendChild(modalContainer);
   }
 
-  // Create the modal content
   function createModalContent() {
     const modalContent = document.createElement("div");
     modalContent.className = "shield-checker-modal";
 
-    // Add content to the modal
     modalContent.innerHTML = `
       <div class="modal-header">
         <h3 class="modal-title">Content Shield</h3>
@@ -851,7 +731,7 @@
             <span id="toggle-style-text">Show</span> <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1" id="toggle-style-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
         </div>
-        
+
         <div id="style-settings-content" class="space-y-3" style="display: none;">
           <div class="form-group">
             <label for="highlight-color-input">Highlight Color</label>
@@ -866,7 +746,7 @@
                 style="flex: 1;">
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="border-width-input">Border Width</label>
             <select id="border-width-input" class="w-full">
@@ -884,7 +764,7 @@
               }>Very Thick (4px)</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label for="warning-header-bg-input">Warning Header Color</label>
             <div class="flex items-center">
@@ -898,7 +778,7 @@
                 style="flex: 1;">
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Menu & Keyboard Controls</label>
             <div class="space-y-2">
@@ -908,7 +788,7 @@
                 }>
                 <label for="menu-visibility" class="text-sm" style="color: rgb(161, 161, 170);">Add to Typingmind Menu</label>
               </div>
-              
+
               <div class="flex items-center">
                 <label for="keyboard-shortcut" class="text-sm mr-2 w-32">Keyboard Shortcut:</label>
                 <div class="relative flex-grow">
@@ -925,7 +805,7 @@
               <div id="shortcut-error" class="text-red-500 text-xs hidden">A keyboard shortcut is required when extension is hidden from menu</div>
             </div>
           </div>
-          
+
           <div class="form-group menu-placement-section" ${
             !config.menuButton.show ? 'style="opacity:0.5;"' : ""
           }>
@@ -949,7 +829,7 @@
             </div>
             <p class="text-xs text-gray-400 mt-1">Placement will take effect after saving</p>
           </div>
-          
+
           <button id="save-styles-btn" class="button button-primary mt-2">Save Styles</button>
         </div>
       </div>
@@ -976,10 +856,8 @@
       </div>
     `;
 
-    // Store reference to the rules list
     rulesList = modalContent.querySelector("#shield-rules-list");
 
-    // Add event listeners
     modalContent.addEventListener("click", (e) => {
       if (e.target.id === "close-shield-modal") {
         togglePrivacyModal();
@@ -1010,11 +888,9 @@
         recordShortcut(e);
       }
 
-      // Prevent event propagation
       e.stopPropagation();
     });
 
-    // Add event listeners for color inputs to sync
     modalContent.addEventListener("input", (e) => {
       if (e.target.id === "highlight-color-input") {
         document.getElementById("highlight-color-text").value = e.target.value;
@@ -1032,7 +908,6 @@
       } else if (e.target.id === "border-width-input") {
         applyStyleChanges();
       } else if (e.target.id === "menu-visibility") {
-        // Toggle menu placement section opacity and disabled state
         const isHidden = !e.target.checked;
         const placementSection = document.querySelector(
           ".menu-placement-section"
@@ -1050,7 +925,6 @@
           placementReference.disabled = isHidden;
         }
 
-        // Show error if menu is hidden and no shortcut is provided
         if (
           isHidden &&
           (!shortcutInput.value || shortcutInput.value.trim() === "")
@@ -1067,11 +941,9 @@
     return modalContent;
   }
 
-  // Generate options for menu placement dropdown
   function generateMenuItemOptions() {
     let options = "";
 
-    // Sort menu items by their original order
     const sortedItems = Object.values(menuItems).sort(
       (a, b) => a.order - b.order
     );
@@ -1085,34 +957,26 @@
     return options;
   }
 
-  // Toggle the shield checker
   function toggleShieldChecker() {
     config.enabled = !config.enabled;
     saveConfig();
 
-    // Update UI
     const toggle = document.getElementById("shield-checker-toggle");
     if (toggle) {
       toggle.checked = config.enabled;
     }
 
-    // Re-check the current input
     checkForSensitiveInfo();
   }
 
-  // Toggle the shield modal
   function togglePrivacyModal() {
     if (modalContainer.style.display === "none") {
-      // Rescan menu items before showing modal
       scanMenuItems();
 
-      // Show modal
       modalContainer.style.display = "flex";
 
-      // Populate rules
       populateRulesList();
 
-      // Make sure the style settings content is hidden initially
       const styleContent = document.getElementById("style-settings-content");
       if (styleContent) {
         styleContent.style.display = "none";
@@ -1128,7 +992,6 @@
         toggleIcon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
       }
 
-      // Add click event to close when clicking outside
       const closeOnOutsideClick = (e) => {
         if (e.target === modalContainer) {
           togglePrivacyModal();
@@ -1138,25 +1001,20 @@
 
       modalContainer.addEventListener("click", closeOnOutsideClick);
     } else {
-      // Hide modal
       modalContainer.style.display = "none";
     }
   }
 
-  // Populate the rules list in the modal
   function populateRulesList() {
     if (!rulesList) return;
 
-    // Clear existing rules
     rulesList.innerHTML = "";
 
-    // Update the rules count in the title
     const rulesTitle = document.querySelector("#shield-rules-title");
     if (rulesTitle) {
       rulesTitle.textContent = `Shield Rules (${config.rules.length})`;
     }
 
-    // Add each rule
     config.rules.forEach((rule) => {
       const ruleElement = document.createElement("div");
       ruleElement.className = "rule-item";
@@ -1204,7 +1062,6 @@
         </div>
       `;
 
-      // Add event listeners
       const toggleCheckbox = ruleElement.querySelector(".rule-toggle");
       toggleCheckbox.addEventListener("change", (e) => {
         toggleRule(rule.id, toggleCheckbox.checked);
@@ -1227,24 +1084,20 @@
     });
   }
 
-  // Toggle a rule's active status
   function toggleRule(ruleId, active) {
     const ruleIndex = config.rules.findIndex((r) => r.id === ruleId);
     if (ruleIndex !== -1) {
       config.rules[ruleIndex].active = active;
       saveConfig();
 
-      // Re-check the current input
       checkForSensitiveInfo();
     }
   }
 
-  // Add a new rule
   function addNewRule() {
     showRuleEditor();
   }
 
-  // Edit an existing rule
   function editRule(ruleId) {
     const rule = config.rules.find((r) => r.id === ruleId);
     if (rule) {
@@ -1252,21 +1105,17 @@
     }
   }
 
-  // Delete a rule
   function deleteRule(ruleId) {
     if (confirm("Are you sure you want to delete this rule?")) {
       config.rules = config.rules.filter((r) => r.id !== ruleId);
       saveConfig();
       populateRulesList();
 
-      // Re-check the current input
       checkForSensitiveInfo();
     }
   }
 
-  // Show the rule editor dialog
   function showRuleEditor(existingRule = null) {
-    // Create the editor overlay
     const editorOverlay = document.createElement("div");
     editorOverlay.className = "rule-editor-overlay";
     editorOverlay.style.position = "fixed";
@@ -1284,9 +1133,8 @@
     editorOverlay.style.padding = "1rem";
     editorOverlay.style.animation = "fadeIn 0.2s ease-out";
 
-    // Create the editor content
     const editorContent = document.createElement("div");
-    editorContent.className = "shield-checker-modal"; // Reuse main modal styles
+    editorContent.className = "shield-checker-modal";
     editorContent.style.animation = "slideIn 0.3s ease-out";
 
     editorContent.innerHTML = `
@@ -1295,7 +1143,7 @@
           existingRule ? "Edit Rule" : "Add New Rule"
         }</h3>
       </div>
-      
+
       <div class="modal-section">
         <div class="form-group">
           <label for="rule-name-input">Rule Name</label>
@@ -1303,7 +1151,7 @@
             existingRule ? existingRule.name : ""
           }">
         </div>
-        
+
         <div class="form-group">
           <label for="rule-type-input">Rule Type</label>
           <select id="rule-type-input">
@@ -1318,7 +1166,7 @@
             }>Variable Assignment</option>
           </select>
         </div>
-        
+
         <div class="form-group">
           <label for="rule-pattern-input">Pattern</label>
           <input type="text" id="rule-pattern-input" value="${
@@ -1332,7 +1180,7 @@
             existingRule ? existingRule.description || "" : ""
           }</textarea>
         </div>
-        
+
         <div id="case-sensitive-container" class="form-group" ${
           existingRule && existingRule.type !== "string"
             ? 'style="display:none;"'
@@ -1352,14 +1200,13 @@
 
         <div id="regex-validation-message" class="validation-message" style="display: none; color: #f87171; font-size: 12px; margin-top: 6px;"></div>
       </div>
-      
+
       <div class="button-group">
         <button id="cancel-rule-edit" class="button button-secondary">Cancel</button>
         <button id="save-rule-edit" class="button button-primary">Save</button>
       </div>
     `;
 
-    // Add event listeners
     const ruleTypeInput = editorContent.querySelector("#rule-type-input");
     const caseSensitiveContainer = editorContent.querySelector(
       "#case-sensitive-container"
@@ -1376,16 +1223,13 @@
       caseSensitiveContainer.style.display =
         ruleTypeInput.value === "string" ? "block" : "none";
 
-      // Clear validation message when switching types
       validationMessage.style.display = "none";
 
-      // Validate regex when switching to regex type
       if (ruleTypeInput.value === "regex" && patternInput.value) {
         validateRegex(patternInput.value);
       }
     });
 
-    // Add validation for regex pattern
     patternInput.addEventListener("input", () => {
       if (ruleTypeInput.value === "regex") {
         validateRegex(patternInput.value);
@@ -1394,7 +1238,6 @@
       }
     });
 
-    // Validate regex pattern
     function validateRegex(pattern) {
       try {
         new RegExp(pattern);
@@ -1436,13 +1279,11 @@
         return;
       }
 
-      // Validate regex before saving
       if (type === "regex" && !validateRegex(pattern)) {
-        return; // Don't save if regex is invalid
+        return;
       }
 
       if (existingRule) {
-        // Update existing rule
         const ruleIndex = config.rules.findIndex(
           (r) => r.id === existingRule.id
         );
@@ -1457,7 +1298,6 @@
           };
         }
       } else {
-        // Add new rule
         config.rules.push({
           id: config.nextRuleId++,
           name,
@@ -1472,49 +1312,41 @@
       saveConfig();
       populateRulesList();
 
-      // Re-check the current input
       checkForSensitiveInfo();
 
       document.body.removeChild(editorOverlay);
       e.stopPropagation();
     });
 
-    // Append to overlay
     editorOverlay.appendChild(editorContent);
     document.body.appendChild(editorOverlay);
 
-    // Prevent click propagation
     editorContent.addEventListener("click", (e) => {
       e.stopPropagation();
     });
 
-    // Close on overlay click
     editorOverlay.addEventListener("click", (e) => {
       document.body.removeChild(editorOverlay);
       e.stopPropagation();
     });
   }
 
-  // Toggle style settings section visibility
   function toggleStyleSettings() {
     const styleContent = document.getElementById("style-settings-content");
     const toggleText = document.getElementById("toggle-style-text");
     const toggleIcon = document.getElementById("toggle-style-icon");
 
     if (styleContent.style.display === "none") {
-      // Show content with fade-in effect
       styleContent.style.display = "block";
       toggleText.textContent = "Hide";
       toggleIcon.innerHTML = '<polyline points="18 15 12 9 6 15"></polyline>';
     } else {
-      // Hide content
       styleContent.style.display = "none";
       toggleText.textContent = "Show";
       toggleIcon.innerHTML = '<polyline points="6 9 12 15 18 9"></polyline>';
     }
   }
 
-  // Apply style changes in real-time without saving
   function applyStyleChanges() {
     const highlightColor = document.getElementById(
       "highlight-color-text"
@@ -1524,18 +1356,15 @@
       "warning-header-text"
     ).value;
 
-    // Apply styles temporarily without saving to config
     if (lastActiveMatches.length > 0) {
       chatInputElement.style.border = `${borderWidth} solid ${highlightColor}`;
       chatInputElement.style.boxShadow = `0 0 5px ${highlightColor}`;
 
-      // Update warning header if visible
       const warningHeader = document.querySelector(".shield-warning-header");
       if (warningHeader) {
         warningHeader.style.backgroundColor = warningHeaderBg;
       }
 
-      // Update highlighted text color in warnings
       const highlightedTexts = document.querySelectorAll(
         ".shield-warning-cell code"
       );
@@ -1545,7 +1374,6 @@
     }
   }
 
-  // Save style settings
   function saveStyleSettings() {
     const highlightColor = document.getElementById(
       "highlight-color-text"
@@ -1562,7 +1390,6 @@
     const menuVisibility = document.getElementById("menu-visibility").checked;
     const keyboardShortcut = document.getElementById("keyboard-shortcut").value;
 
-    // Validate: if menu is hidden, shortcut is required
     if (
       !menuVisibility &&
       (!keyboardShortcut || keyboardShortcut.trim() === "")
@@ -1571,12 +1398,10 @@
       return;
     }
 
-    // Save style settings
     config.styles.highlightColor = highlightColor;
     config.styles.borderWidth = borderWidth;
     config.styles.warningHeaderBg = warningHeaderBg;
 
-    // Save placement settings
     const placementChanged =
       config.placement.position !== placementPosition ||
       config.placement.referenceElement !== placementReference;
@@ -1584,7 +1409,6 @@
     config.placement.position = placementPosition;
     config.placement.referenceElement = placementReference;
 
-    // Save menu button settings
     const menuButtonChanged =
       config.menuButton.show !== menuVisibility ||
       config.menuButton.shortcut !== keyboardShortcut;
@@ -1594,35 +1418,27 @@
 
     saveConfig();
 
-    // Update UI if there are active matches
     if (lastActiveMatches.length > 0) {
       updateChatInputStyle(true);
     }
 
-    // Handle menu button changes
     if (menuButtonChanged) {
-      // Update keyboard shortcut handler
       setupKeyboardShortcut();
 
-      // Add or remove menu button
       if (menuVisibility) {
         if (!privacyButton || !privacyButton.parentNode) {
           setupShieldButton();
         } else if (placementChanged) {
-          // Reposition existing button if placement changed
           setupShieldButton();
         }
       } else if (privacyButton && privacyButton.parentNode) {
-        // Remove menu button if it should be hidden
         privacyButton.parentNode.removeChild(privacyButton);
         privacyButton = null;
       }
     } else if (placementChanged && menuVisibility) {
-      // Reposition button if placement changed and button is visible
       setupShieldButton();
     }
 
-    // Show a success message
     const saveBtn = document.getElementById("save-styles-btn");
     const originalText = saveBtn.textContent;
     saveBtn.textContent = "Saved!";
@@ -1634,9 +1450,7 @@
     }, 1500);
   }
 
-  // Export rules to TSV
   function exportRules() {
-    // Define headers
     const headers = [
       "id",
       "type",
@@ -1647,7 +1461,6 @@
       "caseSensitive",
     ];
 
-    // Convert rules to TSV format
     const rows = [
       headers.join("\t"),
       ...config.rules.map((rule) => {
@@ -1663,35 +1476,27 @@
       }),
     ];
 
-    // Create TSV content
     const tsvContent = rows.join("\n");
 
-    // Create a downloadable blob
     const blob = new Blob([tsvContent], { type: "text/tab-separated-values" });
     const url = URL.createObjectURL(blob);
 
-    // Create download link
     const downloadLink = document.createElement("a");
     downloadLink.href = url;
     downloadLink.download = "typingmind-contentshield-rules.tsv";
 
-    // Add to DOM, click it, and remove it
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
 
-    // Clean up the URL
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
-  // Import rules from TSV
   function importRules() {
-    // Create file input
     const fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = ".tsv";
 
-    // Handle file selection
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -1699,11 +1504,9 @@
       const reader = new FileReader();
       reader.onload = function (event) {
         try {
-          // Parse TSV content
           const lines = event.target.result.split("\n");
           const headers = lines[0].split("\t");
 
-          // Skip header row and parse each line
           const importedRules = lines
             .slice(1)
             .filter((line) => line.trim())
@@ -1718,7 +1521,6 @@
                 description: values[5],
               };
 
-              // Add caseSensitive for string type rules
               if (rule.type === "string") {
                 rule.caseSensitive = values[6] === "true";
               }
@@ -1726,12 +1528,10 @@
               return rule;
             });
 
-          // Validate and merge rules
           let addedCount = 0;
           let skippedCount = 0;
 
           importedRules.forEach((importedRule) => {
-            // Validate regex patterns
             if (importedRule.type === "regex") {
               try {
                 new RegExp(importedRule.pattern);
@@ -1744,14 +1544,12 @@
               }
             }
 
-            // Check if rule exists
             const ruleExists = config.rules.some(
               (existingRule) =>
                 existingRule.type === importedRule.type &&
                 existingRule.pattern === importedRule.pattern
             );
 
-            // Add new rule if it doesn't exist
             if (!ruleExists) {
               const newId = config.nextRuleId++;
               config.rules.push({
@@ -1762,14 +1560,11 @@
             }
           });
 
-          // Save changes and refresh UI
           saveConfig();
           populateRulesList();
 
-          // Re-check the current input
           checkForSensitiveInfo();
 
-          // Show success message
           const skipMessage =
             skippedCount > 0
               ? ` (${skippedCount} rules skipped due to validation errors)`
@@ -1786,30 +1581,25 @@
       reader.readAsText(file);
     });
 
-    // Trigger file selection
     document.body.appendChild(fileInput);
     fileInput.click();
     document.body.removeChild(fileInput);
   }
 
-  // Setup keyboard shortcut listener
   function setupKeyboardShortcut() {
     document.removeEventListener("keydown", handleKeyboardShortcut);
     document.addEventListener("keydown", handleKeyboardShortcut);
   }
 
-  // Handle keyboard shortcut keydown event
   function handleKeyboardShortcut(e) {
     const shortcut = parseShortcut(config.menuButton.shortcut);
 
-    // Check if the pressed keys match the shortcut
     if (isShortcutMatch(e, shortcut)) {
       e.preventDefault();
       togglePrivacyModal();
     }
   }
 
-  // Parse shortcut string into components
   function parseShortcut(shortcutStr) {
     const keys = shortcutStr.split("+");
     return {
@@ -1820,7 +1610,6 @@
     };
   }
 
-  // Check if event matches shortcut
   function isShortcutMatch(event, shortcut) {
     return (
       event.ctrlKey === shortcut.ctrl &&
@@ -1831,23 +1620,19 @@
     );
   }
 
-  // Record keyboard shortcut
   function recordShortcut(e) {
     e.preventDefault();
 
     const shortcutInput = document.getElementById("keyboard-shortcut");
     const recordBtn = document.getElementById("record-shortcut");
 
-    // Update button text
     recordBtn.textContent = "Listening...";
     recordBtn.classList.add("text-red-500");
 
-    // Clear the input
     shortcutInput.value = "";
     shortcutInput.placeholder = "Type a key combination...";
     shortcutInput.focus();
 
-    // Track which modifier keys are pressed
     let modifiers = {
       ctrl: false,
       alt: false,
@@ -1855,7 +1640,6 @@
       key: "",
     };
 
-    // Function to update input value
     function updateInputValue() {
       let parts = [];
       if (modifiers.ctrl) parts.push("Ctrl");
@@ -1867,7 +1651,6 @@
 
       shortcutInput.value = parts.join("+");
 
-      // Hide error if value is provided and menu button is hidden
       const hideMenu = document.getElementById("menu-visibility").checked;
       const shortcutError = document.getElementById("shortcut-error");
 
@@ -1876,7 +1659,6 @@
       }
     }
 
-    // Keydown handler for recording
     function handleKeyDown(evt) {
       evt.preventDefault();
 
@@ -1887,14 +1669,12 @@
       } else if (evt.key === "Shift") {
         modifiers.shift = true;
       } else {
-        // For letter keys, store the uppercase version
         if (evt.code.startsWith("Key")) {
           modifiers.key = evt.code.replace("Key", "");
         } else {
           modifiers.key = evt.key;
         }
 
-        // Update the input and stop listening
         updateInputValue();
         stopListening();
       }
@@ -1902,7 +1682,6 @@
       updateInputValue();
     }
 
-    // Keyup handler
     function handleKeyUp(evt) {
       if (evt.key === "Control" || evt.key === "Ctrl") {
         modifiers.ctrl = false;
@@ -1915,22 +1694,18 @@
       updateInputValue();
     }
 
-    // Stop listening function
     function stopListening() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
 
-      // Reset button
       recordBtn.textContent = "Record";
       recordBtn.classList.remove("text-red-500");
       shortcutInput.placeholder = "";
     }
 
-    // Add event listeners
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
-    // Add a click handler to stop recording if clicked elsewhere
     function documentClickHandler(evt) {
       if (evt.target !== shortcutInput && evt.target !== recordBtn) {
         stopListening();
@@ -1938,13 +1713,11 @@
       }
     }
 
-    // Start listening for clicks after a short delay
     setTimeout(() => {
       window.addEventListener("click", documentClickHandler);
     }, 100);
   }
 
-  // Add CSS for the extension
   function addStyles() {
     const styleElement = document.createElement("style");
     styleElement.textContent = `
@@ -1963,7 +1736,7 @@
         box-shadow: none;
       }
 
-      /* Shield warning tooltip */
+
       .shield-warning-tooltip {
         position: absolute;
         top: 100%;
@@ -2033,7 +1806,7 @@
         text-align: center;
         margin: 10px 0;
       }
-    
+
       .shield-warning {
         position: absolute;
         top: 100%;
@@ -2046,8 +1819,8 @@
         font-size: 12px;
         max-width: 300px;
       }
-      
-      /* Modal styles */
+
+
       #shield-checker-modal-container {
         position: fixed;
         top: 0;
@@ -2084,7 +1857,7 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
 
-      /* Icon Buttons */
+
       .icon-button {
         background: transparent;
         border: none;
@@ -2112,7 +1885,7 @@
         color: #f87171;
       }
 
-      /* Tooltip styles */
+
       [class*="hint--"] {
         position: relative;
         display: inline-block;
@@ -2153,7 +1926,7 @@
         border-radius: 4px;
       }
 
-      /* Ensure specific tooltip classes don't override the width */
+
       .hint--top::after,
       .hint--top-right::after,
       .hint--top-left::after,
@@ -2263,7 +2036,7 @@
         right: 0;
       }
 
-      /* Animation keyframes */
+
       @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -2437,18 +2210,18 @@
         color: rgb(239, 68, 68);
       }
 
-      /* Style content transitions */
+
       #style-settings-content {
         overflow: hidden;
         transition: all 0.3s ease;
       }
-      
-      /* Icon animation */
+
+
       #toggle-style-icon {
         transition: transform 0.3s ease;
       }
 
-      /* Confirmation dialog styles */
+
       .confirmation-dialog {
         position: relative;
         z-index: 100003;
@@ -2493,7 +2266,6 @@
     document.head.appendChild(styleElement);
   }
 
-  // Initialize when the DOM is fully loaded
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       addStyles();
@@ -2504,14 +2276,12 @@
     init();
   }
 
-  // Add the deleteAllRules function
   function deleteAllRules() {
-    // Show confirmation dialog
     const confirmDialog = document.createElement("div");
     confirmDialog.className = "shield-checker-modal confirmation-dialog";
     confirmDialog.style.maxWidth = "24rem";
     confirmDialog.style.position = "relative";
-    confirmDialog.style.zIndex = "100003"; // Higher than the main modal
+    confirmDialog.style.zIndex = "100003";
     confirmDialog.innerHTML = `
       <div class="modal-header">
         <h3 class="modal-title text-red-500">Delete All Rules</h3>
@@ -2526,38 +2296,29 @@
       </div>
     `;
 
-    // Create overlay
     const overlay = document.createElement("div");
     overlay.className =
       "fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center";
-    overlay.style.zIndex = "100002"; // Higher than the main modal
+    overlay.style.zIndex = "100002";
     overlay.appendChild(confirmDialog);
 
-    // Add to DOM
     document.body.appendChild(overlay);
 
-    // Handle confirmation
     const confirmBtn = document.getElementById("confirm-delete-all");
     confirmBtn.addEventListener("click", () => {
-      // Clear all rules
       config.rules = [];
       config.nextRuleId = 1;
 
-      // Save changes
       saveConfig();
 
-      // Update UI
       populateRulesList();
 
-      // Re-check current input
       checkForSensitiveInfo();
 
-      // Remove confirmation dialog
       if (overlay && overlay.parentNode) {
         overlay.parentNode.removeChild(overlay);
       }
 
-      // Show success message
       const rulesSection = document.querySelector("#shield-rules-title");
       const successMessage = document.createElement("div");
       successMessage.className = "text-green-500 text-sm ml-2 inline-block";
@@ -2571,7 +2332,6 @@
       }, 2000);
     });
 
-    // Handle cancel
     const cancelBtn = document.getElementById("cancel-delete-all");
     if (cancelBtn) {
       cancelBtn.addEventListener("click", () => {
@@ -2581,7 +2341,6 @@
       });
     }
 
-    // Close on overlay click
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
         if (overlay.parentNode) {
@@ -2590,12 +2349,10 @@
       }
     });
 
-    // Prevent clicks on the dialog from closing the overlay
     confirmDialog.addEventListener("click", (e) => {
       e.stopPropagation();
     });
 
-    // Add escape key handler
     const handleEscape = (e) => {
       if (e.key === "Escape") {
         if (overlay && overlay.parentNode) {
