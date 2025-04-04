@@ -387,10 +387,26 @@
 
     //console.log("ContentShield: Chat input element found:", chatInputElement);
 
-    // Add input event listener to check content in real-time
+    // Add input event listener for direct user input
     //console.log("ContentShield: Attaching input event listener...");
     chatInputElement.addEventListener("input", checkForSensitiveInfo);
     //console.log("ContentShield: Input event listener attached.");
+
+    // Add MutationObserver to detect programmatic changes (like clearing after submit)
+    //console.log("ContentShield: Setting up MutationObserver for input element...");
+    const observer = new MutationObserver((mutations) => {
+      //console.log("ContentShield: MutationObserver detected change:", mutations);
+      checkForSensitiveInfo(); // Re-check whenever the input changes
+    });
+
+    // Observe changes to the input's value (character data) and structure
+    observer.observe(chatInputElement, {
+      childList: true, // For changes in child nodes (e.g., text node)
+      subtree: true, // Include descendants
+      characterData: true, // For changes in text content
+      // We don't strictly need 'attributes' or 'attributeOldValue' for value changes
+    });
+    //console.log("ContentShield: MutationObserver is now observing the input element.");
 
     // Also check when the page loads
     //console.log("ContentShield: Performing initial check...");
@@ -745,13 +761,9 @@
 
   // Hide shield warning tooltip
   function hideShieldWarning() {
-    console.log("ContentShield: hideShieldWarning called");
     const warningElement = document.getElementById("shield-warning-tooltip");
     if (warningElement) {
-      console.log("ContentShield: Found warning element, removing it.");
       warningElement.remove();
-    } else {
-      console.log("ContentShield: Warning element not found.");
     }
   }
 
