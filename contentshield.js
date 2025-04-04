@@ -153,7 +153,7 @@
       );
       if (menuBar) {
         const observer = new MutationObserver((mutations) => {
-          console.log("Menu bar mutation detected");
+          //console.log("Menu bar mutation detected");
           scanMenuItems();
         });
 
@@ -372,28 +372,28 @@
   // Setup monitoring for the chat input field
   function setupChatMonitoring() {
     // Find the chat input element
-    console.log("ContentShield: Attempting to find chat input element...");
+    //console.log("ContentShield: Attempting to find chat input element...");
     chatInputElement = document.querySelector(
       '#chat-input-textbox, [data-element-id="chat-input-textbox"]'
     );
     if (!chatInputElement) {
-      console.log(
-        "ContentShield: Chat input element not found, retrying in 1 second..."
-      );
+      //console.log(
+      //  "ContentShield: Chat input element not found, retrying in 1 second..."
+      //);
       // Try again in a second - the element might not be loaded yet
       setTimeout(setupChatMonitoring, 1000);
       return;
     }
 
-    console.log("ContentShield: Chat input element found:", chatInputElement);
+    //console.log("ContentShield: Chat input element found:", chatInputElement);
 
     // Add input event listener to check content in real-time
-    console.log("ContentShield: Attaching input event listener...");
+    //console.log("ContentShield: Attaching input event listener...");
     chatInputElement.addEventListener("input", checkForSensitiveInfo);
-    console.log("ContentShield: Input event listener attached.");
+    //console.log("ContentShield: Input event listener attached.");
 
     // Also check when the page loads
-    console.log("ContentShield: Performing initial check...");
+    //console.log("ContentShield: Performing initial check...");
     checkForSensitiveInfo();
   }
 
