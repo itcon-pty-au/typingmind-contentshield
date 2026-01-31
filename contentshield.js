@@ -118,6 +118,8 @@
   let lastActiveMatches = [];
   let menuItems = {};
   let ignoredRegions = [];
+  let shieldBtnSettingsObserver = null;
+  let shieldBtnBodyObserver = null;
   function init() {
     loadConfig();
     const initializeExtension = () => {
@@ -247,20 +249,58 @@
       privacyButton.parentNode.removeChild(privacyButton);
     }
     privacyButton = document.createElement("button");
-    privacyButton.className =
-      "min-w-[58px] sm:min-w-0 sm:aspect-auto aspect-square cursor-default h-12 md:h-[50px] flex-col justify-start items-start inline-flex focus:outline-0 focus:text-white w-full";
     privacyButton.dataset.elementId = "workspace-tab-shield";
-    privacyButton.innerHTML = `
-      <span class="text-white/70 hover:bg-white/20 self-stretch h-12 md:h-[50px] px-0.5 py-1.5 rounded-xl flex-col justify-start items-center gap-1.5 flex transition-colors">
-        <svg class="w-4 h-4 flex-shrink-0" width="18px" height="18px" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-          <g fill="currentColor">
-            <path d="M9,1L2,4v4c0,4.9,3,9.3,7,10.3c4-1,7-5.4,7-10.3V4L9,1z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
-            <path d="M6.5,8.5L8.3,10.3L11.5,7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/>
+    privacyButton.setAttribute("data-tooltip-id", "global");
+    privacyButton.setAttribute("data-tooltip-place", "right");
+    privacyButton.style.cursor = "pointer";
+
+    const pinnedHTML = `
+      <div class="relative w-[18px] h-[18px] flex-shrink-0">
+        <svg class="w-[18px] h-[18px] flex-shrink-0" width="18px" height="18px" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9,1L2,4v4c0,4.9,3,9.3,7,10.3c4-1,7-5.4,7-10.3V4L9,1z"/>
+            <path d="M6.5,8.5L8.3,10.3L11.5,7"/>
           </g>
         </svg>
-        <span class="font-normal self-stretch text-center text-xs leading-4 md:leading-none">Shield</span>
-      </span>
+      </div>
     `;
+
+    const expandedHTML = `
+      <div class="relative w-4 h-4 flex-shrink-0">
+        <svg class="w-4 h-4 flex-shrink-0" width="18px" height="18px" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9,1L2,4v4c0,4.9,3,9.3,7,10.3c4-1,7-5.4,7-10.3V4L9,1z"/>
+            <path d="M6.5,8.5L8.3,10.3L11.5,7"/>
+          </g>
+        </svg>
+      </div>
+      <span class="font-normal mx-auto self-stretch text-center text-xs leading-4 md:leading-none w-full md:w-[51px]" style="hyphens: auto; word-break: break-word;">Shield</span>
+    `;
+
+    const renderLikeSettings = () => {
+      const settingsBtn = document.querySelector('button[data-element-id="workspace-tab-settings"]');
+      const isPinned = !!settingsBtn && settingsBtn.classList.contains("w-9") && settingsBtn.classList.contains("h-9");
+
+      // Copy classes from settings button, filtering out dynamic state classes
+      if (settingsBtn) {
+        const classesToExclude = ['active', 'selected'];
+        const filteredClasses = Array.from(settingsBtn.classList).filter(
+          cls => !classesToExclude.includes(cls) && !cls.startsWith('aria-')
+        ).join(' ');
+        privacyButton.className = filteredClasses;
+      }
+
+      if (isPinned) {
+        privacyButton.setAttribute("data-tooltip-content", "Shield");
+        privacyButton.innerHTML = pinnedHTML;
+      } else {
+        privacyButton.removeAttribute("data-tooltip-content");
+        privacyButton.innerHTML = expandedHTML;
+      }
+    };
+
+    renderLikeSettings();
+
     const position = config.placement.position;
     const refElementId = config.placement.referenceElement;
     const referenceElement = document.querySelector(
@@ -288,6 +328,30 @@
       togglePrivacyModal();
       e.stopPropagation();
     });
+
+    if (!shieldBtnSettingsObserver) {
+      const tryAttach = () => {
+        const settingsBtn = document.querySelector('button[data-element-id="workspace-tab-settings"]');
+        if (!settingsBtn) return false;
+
+        const obs = new MutationObserver(() => renderLikeSettings());
+        obs.observe(settingsBtn, {
+          attributes: true,
+          attributeFilter: ["class"],
+          childList: true
+        });
+        shieldBtnSettingsObserver = obs;
+        return true;
+      };
+
+      if (!tryAttach()) {
+        const bodyObs = new MutationObserver(() => {
+          if (tryAttach()) bodyObs.disconnect();
+        });
+        bodyObs.observe(document.body, { childList: true, subtree: true });
+        shieldBtnBodyObserver = bodyObs;
+      }
+    }
   }
   function setupChatMonitoring() {
     chatInputElement = document.querySelector(
